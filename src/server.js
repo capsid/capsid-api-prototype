@@ -1,7 +1,6 @@
 import { Engine } from "apollo-engine";
 import compression from "compression";
 import cors from "cors";
-import dotenv from "dotenv";
 import { GraphQLServer } from "graphql-yoga";
 
 import schema from "@capsid/schema";
