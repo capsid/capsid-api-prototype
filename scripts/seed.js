@@ -1,7 +1,7 @@
-import elasticsearch from "elasticsearch";
 import mocker from "mocker-data-generator";
 
-const host = "localhost:9200";
+import client from "@capsid/query/client";
+
 const index = "projects";
 const type = "_doc";
 
@@ -22,11 +22,6 @@ const generateData = () => {
 };
 
 const main = async () => {
-  let client = new elasticsearch.Client({
-    host: "localhost:9200",
-    log: "trace"
-  });
-
   const { projects } = await generateData();
   await Promise.all(
     projects.map(body =>
