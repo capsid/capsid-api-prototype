@@ -1,17 +1,49 @@
+import { Engine } from "apollo-engine";
+import compression from "compression";
+import cors from "cors";
+import dotenv from "dotenv";
 import { GraphQLServer } from "graphql-yoga";
 
 import schema from "@capsid/schema";
 
-require("dotenv").config();
+const endpoint = "/graphql";
 
-const options = {
+const serverOpts = {
   port: process.env.PORT,
-  endpoint: "/graphql",
+  endpoint,
   subscriptions: "/subscriptions",
-  playground: "/playground"
+  playground: "/playground",
+  tracing: true,
+  cacheControl: true
 };
-const server = new GraphQLServer({ schema });
 
-server.start(options, () =>
-  console.log("Server is running on localhost:" + options.port)
+const engineOpts = {
+  engineConfig: {
+    apiKey: process.env.ENGINE_API_KEY,
+    logging: { level: process.env.ENGINE_LOG },
+    stores: [
+      {
+        name: "pq",
+        inMemory: {
+          cacheSize: "5000000"
+        }
+      }
+    ],
+    persistedQueries: { store: "pq" }
+  },
+  endpoint,
+  graphqlPort: process.env.PORT
+};
+
+const engine = new Engine(engineOpts);
+engine.start();
+
+if (process.env.MOCK) addMockFunctionsToSchema({ schema });
+
+const server = new GraphQLServer({ schema });
+server.express.use(cors()); // graphql-yoga cors doesn't seem to work
+server.express.use(compression());
+server.express.use(engine.expressMiddleware());
+server.start(serverOpts, ({ port }) =>
+  console.log(`Server is running on localhost: ${port}`)
 );
