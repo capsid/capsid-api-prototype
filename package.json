@@ -23,9 +23,6 @@
   "homepage": "https://github.com/capsid/capsid-api-prototype#readme",
   "dependencies": {
     "apollo-engine": "^0.8.10",
-    "babel-eslint": "^8.2.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "compression": "^1.7.1",
     "cors": "^2.8.4",
     "dotenv": "^5.0.0",
