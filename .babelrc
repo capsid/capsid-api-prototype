@@ -1,4 +1,26 @@
 {
-    "presets": ["env"],
-    "plugins": ["transform-object-rest-spread"]
+    "presets": [
+    ["env", {
+        "targets": {
+            "node": "current"
+        }
+        }]
+    ],
+    "plugins": [
+        "transform-object-rest-spread",
+        [
+          "module-resolver",
+          {
+            "root": [
+              "./"
+            ],
+            "alias": {
+              "@capsid/mappings": "./src/mappings",
+              "@capsid/schema": "./src/schema",
+              "@capsid/query": "./src/query"
+            }
+          }
+        ]
+      ]
+    
 }

@@ -1,12 +1,11 @@
 import { GraphQLServer } from "graphql-yoga";
-import { addMockFunctionsToSchema } from "graphql-tools";
 
-import schema from "./schema";
+import schema from "@capsid/schema";
 
-if (process.env.MOCK) addMockFunctionsToSchema({ schema });
+require("dotenv").config();
 
 const options = {
-  port: 8080,
+  port: process.env.PORT,
   endpoint: "/graphql",
   subscriptions: "/subscriptions",
   playground: "/playground"

@@ -1,10 +1,8 @@
-// import { GraphQLSchema } from "graphql-yoga";
 import { GraphQLSchema, GraphQLObjectType } from "graphql";
-
 import { composeWithElastic } from "graphql-compose-elasticsearch";
 
-import projects from "../mappings/projects";
-import client from "./client";
+import client from "@capsid/query/client";
+import projects from "@capsid/mappings/projects";
 
 const ProjectEsTC = composeWithElastic({
   graphqlTypeName: "Projects",

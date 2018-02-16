@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "description": "CaPSID API",
   "scripts": {
-    "start": "BABEL_DISABLE_CACHE=1 nodemon -e js,graphql src/server.js --exec babel-node",
-    "seed": "babel-node src/seed.js",
+    "start": "BABEL_DISABLE_CACHE=1 nodemon -e js,graphql src/server.js --exec 'node --require 'dotenv/config' --require 'babel-register''",
     "build": "babel src -d dist",
     "serve": "node dist/server.js",
+    "index:create": "node --require 'dotenv/config' --require 'babel-register' ./scripts/create_indices.js",
+    "index:seed": "node --require 'dotenv/config' --require 'babel-register' ./scripts/seed.js",
+    "index:delete": "sh ./scripts/delete_indices",
     "test": "jest"
   },
   "repository": {
@@ -20,25 +22,25 @@
   },
   "homepage": "https://github.com/capsid/capsid-api-prototype#readme",
   "dependencies": {
-    "babel-eslint": "^8.2.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
+    "dotenv": "^5.0.0",
     "elasticsearch": "^14.1.0",
-    "eslint": "^4.17.0",
-    "eslint-config-google": "^0.9.1",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-prettier": "^2.6.0",
-    "express": "^4.16.2",
-    "express-graphql": "^0.6.11",
     "graphql": "^0.13.0-rc.1",
-    "graphql-compose": "^2.13.1",
+    "graphql-compose": "^3.0.4",
     "graphql-compose-elasticsearch": "^1.8.8",
     "graphql-yoga": "^1.2.3",
     "nodemon": "^1.14.12",
     "prettier": "^1.10.2"
   },
   "devDependencies": {
+    "eslint": "^4.17.0",
+    "eslint-config-google": "^0.9.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "babel-cli": "^6.26.0",
-    "mocker-data-generator": "^2.5.2"
+    "babel-plugin-module-resolver": "^3.1.0",
+    "mocker-data-generator": "^2.5.2",
+    "babel-eslint": "^8.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1"
   }
 }
