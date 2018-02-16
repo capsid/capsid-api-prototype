@@ -19,8 +19,8 @@ const serverOpts = {
 
 const engineOpts = {
   engineConfig: {
-    apiKey: process.env.ENGINE_API_KEY,
-    logging: { level: process.env.ENGINE_LOG },
+    apiKey: process.env.APOLLO_ENGINE_API_KEY,
+    logging: { level: process.env.APOLLO_ENGINE_LOG },
     stores: [
       {
         name: "pq",
