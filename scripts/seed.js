@@ -25,6 +25,7 @@ const sampleSeedConfig = {
   cancer: { values: ["typeA", "typeB", "typeC"] },
   version: { faker: 'random.number({"min": 3, "max": 7})' },
   name: { faker: "lorem.word" }
+};
 
 const generateData = () => {
   return mocker()
