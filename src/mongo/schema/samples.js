@@ -3,23 +3,41 @@ import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
 
-const ProjectSchema = new Schema(
+const SampleSchema = new Schema(
   {
+    source: {
+      type: String,
+      description: "source",
+      es_indexed: true,
+      es_type: "keyword"
+    },
+    projectLabel: {
+      type: String,
+      description: "projectLabel",
+      es_indexed: true,
+      es_type: "text"
+    },
+    role: {
+      type: String,
+      description: "role",
+      es_indexed: true,
+      es_type: "keyword"
+    },
     description: {
       type: String,
       description: "description",
       es_indexed: true,
       es_type: "text"
     },
-    roles: {
-      type: Array,
-      description: "roles",
+    cancer: {
+      type: String,
+      description: "cancer",
       es_indexed: true,
       es_type: "keyword"
     },
-    label: {
+    name: {
       type: String,
-      description: "label",
+      description: "name",
       es_indexed: true,
       es_type: "keyword"
     },
@@ -28,18 +46,6 @@ const ProjectSchema = new Schema(
       description: "version",
       es_indexed: true,
       es_type: "long"
-    },
-    wikiLink: {
-      type: String,
-      description: "wikiLink",
-      es_indexed: true,
-      es_type: "text"
-    },
-    name: {
-      type: String,
-      description: "name",
-      es_indexed: true,
-      es_type: "keyword"
     }
   },
   {
@@ -61,11 +67,11 @@ const ProjectSchema = new Schema(
   }
 );
 
-ProjectSchema.plugin(mongooseElasticsearch, {
+SampleSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
   type: "_doc"
 });
 
-export const Project = mongoose.model("Project", ProjectSchema);
+export const Sample = mongoose.model("Sample", SampleSchema);
 
-export default ProjectSchema;
+export default SampleSchema;

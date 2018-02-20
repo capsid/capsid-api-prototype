@@ -2,14 +2,14 @@ import { composeWithElastic } from "graphql-compose-elasticsearch";
 import { generate } from "mongoose-elasticsearch-xp/lib/mapping";
 
 import elasticClient from "../client";
-import ProjectsSchema from "@capsid/mongo/schema/projects";
+import SampleSchema from "@capsid/mongo/schema/samples";
 
-const ProjectEsTC = composeWithElastic({
-  graphqlTypeName: "ProjectEs",
-  elasticIndex: "projects",
+const SampleEsTC = composeWithElastic({
+  graphqlTypeName: "SampleEs",
+  elasticIndex: "samples",
   elasticType: "_doc",
   elasticMapping: {
-    properties: generate(ProjectsSchema)
+    properties: generate(SampleSchema)
   },
   elasticClient,
   // elastic mapping does not contain information about is fields are arrays or not
@@ -17,4 +17,4 @@ const ProjectEsTC = composeWithElastic({
   pluralFields: []
 });
 
-export default ProjectEsTC;
+export default SampleEsTC;

@@ -1,17 +1,17 @@
 import mongoose from "mongoose";
 import composeWithMongoose from "graphql-compose-mongoose";
 
-import { Project } from "@capsid/mongo/schema/projects";
-import ProjectsEsTC from "@capsid/es/schema/projects";
+import { Sample } from "@capsid/mongo/schema/samples";
+import SampleEsTC from "@capsid/es/schema/samples";
 
-export const ProjectTC = composeWithMongoose(Project);
+export const SampleTC = composeWithMongoose(Sample);
 
-ProjectsEsTC.getResolver("searchConnection")
+SampleEsTC.getResolver("searchConnection")
   .getTypeComposer()
   .getFieldTC("edges")
   .getFieldTC("node")
   .addRelation("fromMongo", {
-    resolver: () => ProjectTC.getResolver("findById"),
+    resolver: () => SampleTC.getResolver("findById"),
     prepareArgs: {
       _id: source => source._id
     },
