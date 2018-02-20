@@ -3,7 +3,7 @@ import compression from "compression";
 import cors from "cors";
 import { GraphQLServer } from "graphql-yoga";
 
-import schema from "@capsid/schema";
+import schema from "@capsid/mongo/schema/projects";
 
 const endpoint = "/graphql";
 
@@ -36,8 +36,6 @@ const engineOpts = {
 
 const engine = new Engine(engineOpts);
 engine.start();
-
-if (process.env.MOCK) addMockFunctionsToSchema({ schema });
 
 const server = new GraphQLServer({ schema });
 server.express.use(cors()); // graphql-yoga cors doesn't seem to work

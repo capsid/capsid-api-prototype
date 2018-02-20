@@ -7,9 +7,9 @@ services:
       - "9200:9200"
       - "9300:9300"
     volumes:
-      - data:/usr/share/elasticsearch/data
+      - es:/usr/share/elasticsearch/data
     networks:
-      - elk
+      - db
     environment:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - "discovery.zen.minimum_master_nodes=1"
@@ -34,14 +34,24 @@ services:
         max-size: "50m"
         max-file: "10"
     networks:
-      - elk
+      - db
     depends_on:
       - elasticsearch
     environment:
       LOGGING_QUIET: "true"
 
+  mongo:
+    image: 'mongo:3.6'
+    ports:
+      - '27017:27017'
+    networks:
+      - db
+    volumes:
+      - 'mongo:/usr/share/mongodb/data'
+
 volumes:
-  data:
+  es:
+  mongo:
   
 networks:
-  elk:
+  db:
