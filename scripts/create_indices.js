@@ -1,18 +1,16 @@
-import client from "@capsid/query/client";
-import projects from "@capsid/mappings/projects";
-import samples from "@capsid/mappings/samples";
+import { generate } from "mongoose-elasticsearch-xp/lib/mapping";
 
-const mappings = {
-  projects,
-  samples
-};
+import client from "@capsid/es/client";
+import projectSchema from "@capsid/mongo/schema/projects";
+import sampleSchema from "@capsid/mongo/schema/samples";
 
-Object.keys(mappings).forEach(key =>
-  client.indices.create(
-    {
-      index: key,
-      body: { mappings: { _doc: mappings[key].mapping } }
-    },
-    () => console.log(`${key} index created.`)
-  )
+[["projects", projectSchema], ["samples", sampleSchema]].map(
+  ([index, schema]) =>
+    client.indices.create(
+      {
+        index,
+        body: { mappings: { _doc: { properties: generate(schema) } } }
+      },
+      () => console.log(`${index} index created`)
+    )
 );

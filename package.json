@@ -30,20 +30,23 @@
     "graphql": "^0.13.0-rc.1",
     "graphql-compose": "^3.0.4",
     "graphql-compose-elasticsearch": "^1.8.8",
+    "graphql-compose-mongoose": "^3.0.0",
     "graphql-yoga": "^1.2.3",
+    "mongoose": "^5.0.6",
+    "mongoose-elasticsearch-xp": "^5.4.0",
     "nodemon": "^1.14.12",
     "prettier": "^1.10.2"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.1",
+    "babel-plugin-module-resolver": "^3.1.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "eslint": "^4.17.0",
     "eslint-config-google": "^0.9.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-prettier": "^2.6.0",
-    "babel-cli": "^6.26.0",
-    "babel-plugin-module-resolver": "^3.1.0",
-    "mocker-data-generator": "^2.5.2",
-    "babel-eslint": "^8.2.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1"
+    "mocker-data-generator": "^2.5.2"
   }
 }

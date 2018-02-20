@@ -2,8 +2,9 @@ import { Engine } from "apollo-engine";
 import compression from "compression";
 import cors from "cors";
 import { GraphQLServer } from "graphql-yoga";
+import mongoose from "mongoose";
 
-import schema from "@capsid/schema";
+import schema from "@capsid/graphql/schema";
 
 const endpoint = "/graphql";
 
@@ -34,10 +35,10 @@ const engineOpts = {
   graphqlPort: process.env.PORT
 };
 
+mongoose.connect(process.env.MONGO_HOST);
+
 const engine = new Engine(engineOpts);
 engine.start();
-
-if (process.env.MOCK) addMockFunctionsToSchema({ schema });
 
 const server = new GraphQLServer({ schema });
 server.express.use(cors()); // graphql-yoga cors doesn't seem to work

@@ -1,9 +1,12 @@
 import _ from "lodash";
 import mocker from "mocker-data-generator";
+import mongoose from "mongoose";
 
-import client from "@capsid/query/client";
+import client from "@capsid/es/client";
+import { Project } from "@capsid/mongo/schema/projects";
+import { Sample } from "@capsid/mongo/schema/samples";
 
-const project = {
+const projectSeedConfig = {
   id: { chance: "guid" },
   description: { faker: "lorem.sentence" },
   roles: { function: () => ["admin", "owner"] },
@@ -13,7 +16,7 @@ const project = {
   name: { faker: "lorem.word" }
 };
 
-const sample = {
+const sampleSeedConfig = {
   id: { chance: "guid" },
   source: { faker: "lorem.word" },
   projectLabel: { values: ["label", "not label", "another"] },
@@ -24,26 +27,34 @@ const sample = {
   name: { faker: "lorem.word" }
 };
 
-const main = async () => {
-  const data = await mocker()
-    .schema("projects", project, 50)
-    .schema("samples", sample, 50)
+const generateData = () => {
+  return mocker()
+    .schema("projects", projectSeedConfig, 50)
+    .schema("samples", sampleSeedConfig, 50)
     .build();
+};
 
-  await Promise.all(
-    _.flatten(
-      Object.keys(data).map(key =>
-        data[key].map(body =>
-          client.create({
-            index: key,
-            type: "_doc",
-            id: body.id,
-            body
-          })
-        )
-      )
-    )
-  );
+const deleteAll = async () => {
+  const projects = await Project.find({});
+  await Promise.all(projects.map(x => x.remove()));
+
+  const samples = await Sample.find({});
+  return Promise.all(samples.map(x => x.remove()));
+};
+
+const main = async () => {
+  mongoose.connect(process.env.MONGO_HOST);
+
+  await deleteAll();
+
+  const { projects, samples } = await generateData();
+
+  await Promise.all(projects.map(x => new Project(x)).map(x => x.save()));
+  await Promise.all(samples.map(x => new Sample(x)).map(x => x.save()));
+
+  console.log("Database seeded");
+
+  mongoose.connection.close();
 };
 
 main();

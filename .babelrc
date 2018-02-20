@@ -15,9 +15,9 @@
               "./"
             ],
             "alias": {
-              "@capsid/mappings": "./src/mappings",
-              "@capsid/schema": "./src/schema",
-              "@capsid/query": "./src/query"
+              "@capsid/graphql": "./src/graphql",
+              "@capsid/mongo": "./src/mongo",
+              "@capsid/es": "./src/es"
             }
           }
         ]
