@@ -3,25 +3,38 @@ import { composeWithElastic } from "graphql-compose-elasticsearch";
 
 import client from "@capsid/query/client";
 import projects from "@capsid/mappings/projects";
+import samples from "@capsid/mappings/samples";
 
-const ProjectEsTC = composeWithElastic({
-  graphqlTypeName: "Projects",
-  elasticIndex: "projects",
-  elasticType: "_doc",
-  elasticMapping: projects,
-  elasticClient: client,
-  // elastic mapping does not contain information about is fields are arrays or not
-  // so provide this information explicitly for obtaining correct types in GraphQL
-  pluralFields: []
-});
+const mappings = {
+  Projects: projects,
+  Samples: samples
+};
 
 const schema = new GraphQLSchema({
   query: new GraphQLObjectType({
     name: "Query",
-    fields: {
-      projects: ProjectEsTC.get("$search").getFieldConfig(),
-      projectsConnection: ProjectEsTC.get("$searchConnection").getFieldConfig()
-    }
+    fields: Object.keys(mappings)
+      .map(key => ({
+        graphqlTypeName: key,
+        elasticIndex: key.toLowerCase(),
+        elasticType: "_doc",
+        elasticMapping: mappings[key].mapping,
+        pluralFields: mappings[key].pluralFields
+      }))
+      .map(config => ({
+        config,
+        esTc: composeWithElastic({ ...config, elasticClient: client })
+      }))
+      .reduce(
+        (obj, x) => ({
+          ...obj,
+          [x.config.elasticIndex]: x.esTc.get("$search").getFieldConfig(),
+          [`${x.config.elasticIndex}Connection`]: x.esTc
+            .get("$searchConnection")
+            .getFieldConfig()
+        }),
+        {}
+      )
   })
 });
 

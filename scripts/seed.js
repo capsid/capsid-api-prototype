@@ -1,9 +1,7 @@
+import _ from "lodash";
 import mocker from "mocker-data-generator";
 
 import client from "@capsid/query/client";
-
-const index = "projects";
-const type = "_doc";
 
 const project = {
   id: { chance: "guid" },
@@ -15,22 +13,35 @@ const project = {
   name: { faker: "lorem.word" }
 };
 
-const generateData = () => {
-  return mocker()
-    .schema("projects", project, 50)
-    .build();
+const sample = {
+  id: { chance: "guid" },
+  source: { faker: "lorem.word" },
+  projectLabel: { values: ["label", "not label", "another"] },
+  role: { values: ["admin", "owner"] },
+  description: { faker: "lorem.sentence" },
+  cancer: { values: ["typeA", "typeB", "typeC"] },
+  version: { faker: 'random.number({"min": 3, "max": 7})' },
+  name: { faker: "lorem.word" }
 };
 
 const main = async () => {
-  const { projects } = await generateData();
+  const data = await mocker()
+    .schema("projects", project, 50)
+    .schema("samples", sample, 50)
+    .build();
+
   await Promise.all(
-    projects.map(body =>
-      client.create({
-        index,
-        type,
-        id: body.id,
-        body
-      })
+    _.flatten(
+      Object.keys(data).map(key =>
+        data[key].map(body =>
+          client.create({
+            index: key,
+            type: "_doc",
+            id: body.id,
+            body
+          })
+        )
+      )
     )
   );
 };
