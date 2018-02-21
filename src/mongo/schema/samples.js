@@ -5,6 +5,12 @@ import elasticClient from "@capsid/es/client";
 
 const SampleSchema = new Schema(
   {
+    projectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      es_indexed: true,
+      es_type: "keyword"
+    },
     source: {
       type: String,
       description: "source",
@@ -15,7 +21,7 @@ const SampleSchema = new Schema(
       type: String,
       description: "projectLabel",
       es_indexed: true,
-      es_type: "text"
+      es_type: "keyword"
     },
     role: {
       type: String,
