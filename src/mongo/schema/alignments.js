@@ -23,7 +23,7 @@ const AlignmentSchema = new Schema(
       es_indexed: true,
       es_type: "keyword"
     },
-    sampleLabel: {
+    sampleName: {
       type: String,
       description: "sample",
       es_indexed: true,

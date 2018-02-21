@@ -108,7 +108,7 @@ const main = async () => {
       alignments.forEach(a => {
         a.projectLabel = sample.projectLabel;
         a.projectId = sample.projectId;
-        a.sample = sample.name;
+        a.sampleName = sample.name;
         a.sampleId = sample._id;
       });
       await saveAndIndexAll(alignments);
