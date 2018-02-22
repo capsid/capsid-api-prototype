@@ -6,6 +6,7 @@ import client from "@capsid/es/client";
 import { Project } from "@capsid/mongo/schema/projects";
 import { Sample } from "@capsid/mongo/schema/samples";
 import { Alignment } from "@capsid/mongo/schema/alignments";
+import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 
 const projectSeedConfig = {
   id: { chance: "guid" },
@@ -38,33 +39,61 @@ const alignmentSeedConfig = {
   outfile: { values: ["C:/out/filepath"] }
 };
 
+const mappedReadConfig = {
+  id: { chance: "guid" },
+  refStart: { faker: 'random.number({"min": 10, "max": 100})' },
+  refEnd: { faker: 'random.number({"min": 300, "max": 1000})' },
+  sequence: { faker: "lorem.word" },
+  pg: { faker: "lorem.word" },
+  readId: { chance: "guid" },
+  platform: { values: ["Platform1", "Platform2"] },
+  mapq: { faker: 'random.number({"min": 10, "max": 100})' },
+  pairEnd: { values: [0] },
+  minQual: { faker: 'random.number({"min": 1, "max": 10})' },
+  genome: { faker: 'random.number({"min": 100, "max": 200})' },
+  md: { chance: "guid" },
+  cigar: { values: [[0, 65], [100, 200], [203, 300]] },
+  mismatch: { faker: 'random.number({"min": 5, "max": 15})' },
+  miscalls: { values: [0] },
+  readLength: { faker: 'random.number({"min": 50, "max": 100})' },
+  alignScore: { faker: 'random.number({"min": 100, "max": 1000})' },
+  mapsGene: [{ chance: "guid", length: 3 }],
+  qqual: { chance: "guid" },
+  refStrand: { values: [1] },
+  alignLength: { faker: 'random.number({"min": 20, "max": 200})' },
+  sequencingType: { values: ["TYPE 1", "TYPE 2", "TYPE 3"] },
+  alignLength: { faker: 'random.number({"min": 20, "max": 70})' },
+  isRef: { values: [true, false] }
+};
+
 const generateData = () => {
   return mocker()
     .schema("projects", projectSeedConfig, 10)
     .schema("samples", sampleSeedConfig, { min: 1, max: 10 })
     .schema("alignments", alignmentSeedConfig, { min: 1, max: 3 })
+    .schema("mappedReads", mappedReadConfig, { min: 10, max: 40 })
     .build();
 };
 
 const deleteAll = async () => {
-  const projects = await Project.find({});
-  const samples = await Sample.find({});
-  const alignments = await Alignment.find({});
-
-  for (const set of [projects, samples, alignments]) {
-    await Promise.all(
-      set.map(
-        x =>
-          new Promise((resolve, reject) => {
-            x.remove(e => {
-              x.on("es-removed", (e, r) => {
-                if (e) console.error(e);
-                resolve(r);
+  let batch;
+  const pageSize = 100;
+  for (const model of [Project, Sample, Alignment, MappedRead]) {
+    while ((batch = await model.find().limit(pageSize)).length) {
+      await Promise.all(
+        batch.map(
+          x =>
+            new Promise((resolve, reject) => {
+              x.remove(e => {
+                x.on("es-removed", (e, r) => {
+                  if (e) console.error(e);
+                  resolve(r);
+                });
               });
-            });
-          })
-      )
-    );
+            })
+        )
+      );
+    }
   }
 };
 
@@ -112,6 +141,20 @@ const main = async () => {
         a.sampleId = sample._id;
       });
       await saveAndIndexAll(alignments);
+
+      for (const alignment of alignments) {
+        const { mappedReads: mappedReadData } = await generateData();
+        const mappedReads = mappedReadData.map(m => new MappedRead(m));
+        mappedReads.forEach(m => {
+          m.projectLabel = alignment.projectLabel;
+          m.projectId = alignment.projectId;
+          m.sampleName = alignment.sampleName;
+          m.sampleId = alignment.sampleId;
+          m.alignmentName = alignment.name;
+          m.alignmentId = alignment._id;
+        });
+        await saveAndIndexAll(mappedReads);
+      }
     }
   }
 

@@ -3,6 +3,10 @@ import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
 
+const collection = "sample";
+export const index = "samples";
+export const type = "_doc";
+
 const SampleSchema = new Schema(
   {
     projectId: {
@@ -55,6 +59,7 @@ const SampleSchema = new Schema(
     }
   },
   {
+    collection,
     timestamps: true,
     es_extend: {
       createdAt: {
@@ -75,7 +80,8 @@ const SampleSchema = new Schema(
 
 SampleSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
-  type: "_doc"
+  index,
+  type
 });
 
 export const Sample = mongoose.model("Sample", SampleSchema);

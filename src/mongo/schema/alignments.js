@@ -3,6 +3,10 @@ import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
 
+const collection = "alignment";
+export const index = "alignments";
+export const type = "_doc";
+
 const AlignmentSchema = new Schema(
   {
     projectId: {
@@ -73,6 +77,7 @@ const AlignmentSchema = new Schema(
     }
   },
   {
+    collection,
     timestamps: true,
     es_extend: {
       createdAt: {
@@ -93,7 +98,8 @@ const AlignmentSchema = new Schema(
 
 AlignmentSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
-  type: "_doc"
+  index,
+  type
 });
 
 export const Alignment = mongoose.model("Alignment", AlignmentSchema);

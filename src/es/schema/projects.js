@@ -2,12 +2,12 @@ import { composeWithElastic } from "graphql-compose-elasticsearch";
 import { generate } from "mongoose-elasticsearch-xp/lib/mapping";
 
 import elasticClient from "../client";
-import ProjectsSchema from "@capsid/mongo/schema/projects";
+import ProjectsSchema, { index, type } from "@capsid/mongo/schema/projects";
 
 const ProjectEsTC = composeWithElastic({
   graphqlTypeName: "ProjectEs",
-  elasticIndex: "projects",
-  elasticType: "_doc",
+  elasticIndex: index,
+  elasticType: type,
   elasticMapping: {
     properties: generate(ProjectsSchema)
   },
