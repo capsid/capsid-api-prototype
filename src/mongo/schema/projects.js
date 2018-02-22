@@ -3,6 +3,10 @@ import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
 
+export const collection = "project";
+export const index = "projects";
+export const type = "_doc";
+
 const ProjectSchema = new Schema(
   {
     description: {
@@ -43,6 +47,7 @@ const ProjectSchema = new Schema(
     }
   },
   {
+    collection,
     timestamps: true,
     es_extend: {
       createdAt: {
@@ -63,7 +68,8 @@ const ProjectSchema = new Schema(
 
 ProjectSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
-  type: "_doc"
+  index,
+  type
 });
 
 export const Project = mongoose.model("Project", ProjectSchema);
