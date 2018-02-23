@@ -8,7 +8,7 @@ import { ProjectTC } from "@capsid/graphql/projects";
 
 export const SampleTC = composeWithMongoose(Sample);
 
-SampleTC.addRelation("project", {
+SampleTC.addRelation("project_", {
   resolver: () => ProjectTC.getResolver("findById"),
   prepareArgs: { _id: x => x.projectId },
   projection: { projectId: true }
