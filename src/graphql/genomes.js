@@ -10,7 +10,7 @@ export const GenomeTC = composeWithMongoose(Genome);
 
 GenomeTC.addRelation("samples_", {
   resolver: () => SampleTC.getResolver("findByIds"),
-  prepareArgs: { _ids: x => console.log(x) || x.samples },
+  prepareArgs: { _ids: x => x.samples },
   projection: { samples: true }
 });
 
