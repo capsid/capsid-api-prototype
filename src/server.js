@@ -3,8 +3,12 @@ import compression from "compression";
 import cors from "cors";
 import { GraphQLServer } from "graphql-yoga";
 import mongoose from "mongoose";
+import urlJoin from "url-join";
+import fetch from "node-fetch";
+import jwt from "jsonwebtoken";
 
 import schema from "@capsid/graphql/schema";
+import { User } from "@capsid/mongo/schema/users";
 
 const endpoint = "/graphql";
 
@@ -35,15 +39,48 @@ const engineOpts = {
   graphqlPort: process.env.PORT
 };
 
-mongoose.connect(process.env.MONGO_HOST);
+const verifyJwt = ({ request, publicKey }) => {
+  const op = publicKey ? jwt.verify : jwt.decode;
+  const { context: { user } } = op(request.headers.token, publicKey);
+  return user;
+};
 
-const engine = new Engine(engineOpts);
-engine.start();
+const main = async () => {
+  mongoose.connect(process.env.MONGO_HOST);
 
-const server = new GraphQLServer({ schema });
-server.express.use(cors()); // graphql-yoga cors doesn't seem to work
-server.express.use(compression());
-server.express.use(engine.expressMiddleware());
-server.start(serverOpts, ({ port }) =>
-  console.log(`Server is running on localhost: ${port}`)
-);
+  const engine = new Engine(engineOpts);
+  engine.start();
+
+  const publicKey = await fetch(
+    urlJoin(process.env.EGO_API_ROOT, "/oauth/token/public_key")
+  ).then(res => res.text());
+
+  const server = new GraphQLServer({
+    schema,
+    context: async ({ request }) => {
+      const { email } = verifyJwt({ request });
+      const user = await User.findOne({ email });
+      return { user };
+    }
+  });
+
+  server.express.use(cors()); // graphql-yoga cors doesn't seem to work
+  server.express.use(compression());
+  server.express.use(engine.expressMiddleware());
+  server.express.use(async (request, res, next) => {
+    let message = null;
+    try {
+      const user = verifyJwt({ request, publicKey });
+      if (!await User.count({ email: user.email })) message = "user not found";
+    } catch (e) {
+      message = "invalid or expired token";
+    }
+    message ? res.status(403).send({ errors: [{ message }] }) : next();
+  });
+
+  server.start(serverOpts, ({ port }) =>
+    console.log(`Server is running on localhost: ${port}`)
+  );
+};
+
+main();

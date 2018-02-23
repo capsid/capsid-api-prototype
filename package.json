@@ -32,11 +32,14 @@
     "graphql-compose-elasticsearch": "^1.8.8",
     "graphql-compose-mongoose": "^3.0.0",
     "graphql-yoga": "^1.2.3",
+    "jsonwebtoken": "^8.1.1",
     "mongoose": "^5.0.6",
     "mongoose-elasticsearch-xp": "^5.4.0",
+    "node-fetch": "^2.0.0",
     "nodemon": "^1.14.12",
     "prettier": "^1.10.2",
-    "timely": "^0.2.0"
+    "timely": "^0.2.0",
+    "url-join": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

@@ -9,6 +9,16 @@ import { Sample } from "@capsid/mongo/schema/samples";
 import { Alignment } from "@capsid/mongo/schema/alignments";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { Genome } from "@capsid/mongo/schema/genomes";
+import { User } from "@capsid/mongo/schema/users";
+
+const models = [Project, Sample, Alignment, MappedRead, Genome, User];
+
+const email = process.env.SUPER_USER;
+
+const nProjects = +process.env.N_PROJECTS || 10;
+const nSamples = +process.env.N_SAMPLES || 40; // per project
+const nAlignments = +process.env.N_ALIGNMENTS || 2; // per sample
+const nGenomes = +process.env.N_GENOMES || 16000; // total
 
 const projectSeedConfig = {
   id: { chance: "guid" },
@@ -88,9 +98,7 @@ const generateData = (config, n) =>
 
 const deleteAll = async () => {
   await createIndices();
-  await Promise.all(
-    [Project, Sample, Alignment, MappedRead, Genome].map(x => x.deleteMany())
-  );
+  await Promise.all(models.map(x => x.deleteMany()));
 };
 
 const saveAndIndexAll = async models => {
@@ -126,15 +134,16 @@ const generateEntitiesHasMany = async (set, seedConfig, n, mapper) => {
 };
 
 const main = async () => {
+  if (!email) {
+    return console.error(
+      `A super user is required... 'SUPER_USER=<email> ... yarn index:seed'`
+    );
+  }
+
   mongoose.connect(process.env.MONGO_HOST);
 
   const deleteAllT = timely.promise(deleteAll);
   const saveAndIndexAllT = timely.promise(saveAndIndexAll);
-
-  const nProjects = +process.env.N_PROJECTS || 10;
-  const nSamples = +process.env.N_SAMPLES || 40; // per project
-  const nAlignments = +process.env.N_ALIGNMENTS || 2; // per sample
-  const nGenomes = +process.env.N_GENOMES || 16000; // total
 
   await deleteAllT();
   log(`Deleted all data`, deleteAllT);
@@ -187,6 +196,17 @@ const main = async () => {
   );
   await saveAndIndexAllT(genomes);
   log(`Indexed ${genomes.length} genomes`, saveAndIndexAllT);
+
+  const superUser = new User({
+    email,
+    superUser: true,
+    roles: projects.reduce(
+      (obj, x) => ({ ...obj, [x._id]: ["admin", "write", "read"] }),
+      {}
+    )
+  });
+  await superUser.save();
+  console.log(`Created super user with email "${superUser.email}"`);
 
   console.log("Database seeded");
 
