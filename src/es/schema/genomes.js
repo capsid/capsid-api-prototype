@@ -2,17 +2,14 @@ import { composeWithElastic } from "graphql-compose-elasticsearch";
 import { generate } from "mongoose-elasticsearch-xp/lib/mapping";
 
 import elasticClient from "../client";
-import MappedReadSchema, {
-  index,
-  type
-} from "@capsid/mongo/schema/mappedReads";
+import GenomeSchema, { index, type } from "@capsid/mongo/schema/alignments";
 
-const MappedReadEsTC = composeWithElastic({
-  graphqlTypeName: "MappedReadEs",
+const GenomeEsTC = composeWithElastic({
+  graphqlTypeName: "GenomeEs",
   elasticIndex: index,
   elasticType: type,
   elasticMapping: {
-    properties: generate(MappedReadSchema)
+    properties: generate(GenomeSchema)
   },
   elasticClient,
   // elastic mapping does not contain information about is fields are arrays or not
@@ -20,4 +17,4 @@ const MappedReadEsTC = composeWithElastic({
   pluralFields: []
 });
 
-export default MappedReadEsTC;
+export default GenomeEsTC;

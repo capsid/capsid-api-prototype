@@ -27,7 +27,7 @@ const MappedReadSchema = new Schema(
       es_indexed: true,
       es_type: "keyword"
     },
-    sampleName: {
+    sample: {
       type: String,
       description: "sample",
       es_indexed: true,
@@ -39,7 +39,7 @@ const MappedReadSchema = new Schema(
       es_indexed: true,
       es_type: "keyword"
     },
-    alignmentName: {
+    alignment: {
       type: String,
       description: "alignment name",
       es_indexed: true,

@@ -9,13 +9,13 @@ import { SampleTC } from "@capsid/graphql/samples";
 
 export const AlignmentTC = composeWithMongoose(Alignment);
 
-AlignmentTC.addRelation("project", {
+AlignmentTC.addRelation("project_", {
   resolver: () => ProjectTC.getResolver("findById"),
   prepareArgs: { _id: x => x.projectId },
   projection: { projectId: true }
 });
 
-AlignmentTC.addRelation("sample", {
+AlignmentTC.addRelation("sample_", {
   resolver: () => SampleTC.getResolver("findById"),
   prepareArgs: { _id: x => x.sampleId },
   projection: { sampleId: true }

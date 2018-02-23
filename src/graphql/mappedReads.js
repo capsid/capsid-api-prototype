@@ -10,19 +10,19 @@ import { AlignmentTC } from "@capsid/graphql/alignments";
 
 export const MappedReadTC = composeWithMongoose(MappedRead);
 
-MappedReadTC.addRelation("project", {
+MappedReadTC.addRelation("project_", {
   resolver: () => ProjectTC.getResolver("findById"),
   prepareArgs: { _id: x => x.projectId },
   projection: { projectId: true }
 });
 
-MappedReadTC.addRelation("sample", {
+MappedReadTC.addRelation("sample_", {
   resolver: () => SampleTC.getResolver("findById"),
   prepareArgs: { _id: x => x.sampleId },
   projection: { sampleId: true }
 });
 
-MappedReadTC.addRelation("alignment", {
+MappedReadTC.addRelation("alignment_", {
   resolver: () => AlignmentTC.getResolver("findById"),
   prepareArgs: { _id: x => x.alignmentId },
   projection: { alignmentId: true }

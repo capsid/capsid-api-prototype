@@ -9,6 +9,9 @@ import { SampleTC } from "@capsid/graphql/samples";
 import AlignmentEsTC from "@capsid/es/schema/alignments";
 import { AlignmentTC } from "@capsid/graphql/alignments";
 
+import GenomeEsTC from "@capsid/es/schema/genomes";
+import { GenomeTC } from "@capsid/graphql/genomes";
+
 import MappedReadEsTC from "@capsid/es/schema/mappedReads";
 import { MappedReadTC } from "@capsid/graphql/mappedReads";
 
@@ -30,6 +33,12 @@ GQC.rootQuery().addFields({
   alignmentMany: AlignmentTC.getResolver("findMany"),
   alignmentOne: AlignmentTC.getResolver("findOne"),
   alignmentById: AlignmentTC.getResolver("findById"),
+
+  genomeEsConnection: GenomeEsTC.getResolver("searchConnection"),
+  genomeMongoConnection: GenomeTC.getResolver("connection"),
+  genomeMany: GenomeTC.getResolver("findMany"),
+  genomeOne: GenomeTC.getResolver("findOne"),
+  genomeById: GenomeTC.getResolver("findById"),
 
   mappedReadEsConnection: MappedReadEsTC.getResolver("searchConnection"),
   mappedReadMongoConnection: MappedReadTC.getResolver("connection"),

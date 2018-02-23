@@ -1,12 +1,14 @@
 import _ from "lodash";
 import mocker from "mocker-data-generator";
 import mongoose from "mongoose";
+import timely from "timely";
 
-import client from "@capsid/es/client";
+import { createIndices } from "./utils";
 import { Project } from "@capsid/mongo/schema/projects";
 import { Sample } from "@capsid/mongo/schema/samples";
 import { Alignment } from "@capsid/mongo/schema/alignments";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
+import { Genome } from "@capsid/mongo/schema/genomes";
 
 const projectSeedConfig = {
   id: { chance: "guid" },
@@ -39,6 +41,19 @@ const alignmentSeedConfig = {
   outfile: { values: ["C:/out/filepath"] }
 };
 
+const genomeSeedConfig = {
+  id: { chance: "guid" },
+  name: { faker: "lorem.sentence" },
+  length: { faker: 'random.number({"min": 1000, "max": 5000})' },
+  organism: { faker: "lorem.sentence" },
+  taxonomy: [{ faker: "lorem.word", length: 6 }],
+  strand: { values: [true, false] },
+  accession: { faker: "lorem.word" },
+  gi: { faker: 'random.number({"min": 1000000, "max": 5000000})' },
+  taxonId: { faker: 'random.number({"min": 10000, "max": 50000})' },
+  version: { faker: 'random.number({"min": 0, "max": 5})' }
+};
+
 const mappedReadConfig = {
   id: { chance: "guid" },
   refStart: { faker: 'random.number({"min": 10, "max": 100})' },
@@ -66,97 +81,112 @@ const mappedReadConfig = {
   isRef: { values: [true, false] }
 };
 
-const generateData = () => {
-  return mocker()
-    .schema("projects", projectSeedConfig, 10)
-    .schema("samples", sampleSeedConfig, { min: 1, max: 10 })
-    .schema("alignments", alignmentSeedConfig, { min: 1, max: 3 })
-    .schema("mappedReads", mappedReadConfig, { min: 10, max: 40 })
+const generateData = (config, n) =>
+  mocker()
+    .schema("items", config, n)
     .build();
-};
 
 const deleteAll = async () => {
-  let batch;
-  const pageSize = 100;
-  for (const model of [Project, Sample, Alignment, MappedRead]) {
-    while ((batch = await model.find().limit(pageSize)).length) {
-      await Promise.all(
-        batch.map(
-          x =>
-            new Promise((resolve, reject) => {
-              x.remove(e => {
-                x.on("es-removed", (e, r) => {
-                  if (e) console.error(e);
-                  resolve(r);
-                });
-              });
-            })
-        )
-      );
-    }
-  }
+  await createIndices();
+  await Promise.all(
+    [Project, Sample, Alignment, MappedRead, Genome].map(x => x.deleteMany())
+  );
 };
 
-const saveAndIndexAll = async models =>
-  Promise.all(
-    models.map(
-      x =>
-        new Promise((resolve, reject) => {
-          x.save(e => {
-            x.on("es-indexed", (e, r) => {
-              if (e) console.error(e);
-              resolve(r);
-            });
-          });
-        })
+const saveAndIndexAll = async models => {
+  const Model = models[0].constructor;
+  await Model.insertMany(models);
+  return Model.esSynchronize();
+};
+
+const log = (msg, timeFn) => console.log(`${timeFn.time}ms :: ${msg}`);
+
+const generateEntities = async (parents, seedConfig, n, mapper) => {
+  return _.flatten(
+    await Promise.all(
+      parents.map(async parent => {
+        const { items } = await generateData(seedConfig, n);
+        return items.map(item => mapper(item, parent));
+      })
     )
   );
+};
+
+const randomInRange = (min, max) => Math.floor(Math.random() * max) + min;
+
+const pickRandomElements = (arr, n) =>
+  [...Array(n)].map(x => arr[randomInRange(0, arr.length)]);
+
+const generateEntitiesHasMany = async (set, seedConfig, n, mapper) => {
+  const { items } = await generateData(seedConfig, n);
+  return items.map(item => {
+    const objs = pickRandomElements(set, randomInRange(1, 6));
+    return mapper(item, objs);
+  });
+};
 
 const main = async () => {
   mongoose.connect(process.env.MONGO_HOST);
 
-  await deleteAll();
+  const deleteAllT = timely.promise(deleteAll);
+  const saveAndIndexAllT = timely.promise(saveAndIndexAll);
 
-  const { projects: projectData } = await generateData();
-  const projects = projectData.map(x => new Project(x));
+  const nProjects = +process.env.N_PROJECTS || 10;
+  const nSamples = +process.env.N_SAMPLES || 40; // per project
+  const nAlignments = +process.env.N_ALIGNMENTS || 2; // per sample
+  const nGenomes = +process.env.N_GENOMES || 16000; // total
 
-  await saveAndIndexAll(projects);
+  await deleteAllT();
+  log(`Deleted all data`, deleteAllT);
 
-  for (const project of projects) {
-    const { samples: sampleData } = await generateData();
-    const samples = sampleData.map(s => new Sample(s));
-    samples.forEach(s => {
-      s.projectLabel = project.label;
-      s.projectId = project._id;
-    });
-    await saveAndIndexAll(samples);
+  const { items } = await generateData(projectSeedConfig, nProjects);
+  const projects = items.map(x => new Project(x));
+  await saveAndIndexAllT(projects);
+  log(`Indexed ${projects.length} projects`, saveAndIndexAllT);
 
-    for (const sample of samples) {
-      const { alignments: alignmentData } = await generateData();
-      const alignments = alignmentData.map(a => new Alignment(a));
-      alignments.forEach(a => {
-        a.projectLabel = sample.projectLabel;
-        a.projectId = sample.projectId;
-        a.sampleName = sample.name;
-        a.sampleId = sample._id;
-      });
-      await saveAndIndexAll(alignments);
+  const samples = await generateEntities(
+    projects,
+    sampleSeedConfig,
+    nSamples,
+    (item, project) =>
+      new Sample({
+        ...item,
+        projectLabel: project.label,
+        projectId: project._id
+      })
+  );
+  await saveAndIndexAllT(samples);
+  log(`Indexed ${samples.length} samples`, saveAndIndexAllT);
 
-      for (const alignment of alignments) {
-        const { mappedReads: mappedReadData } = await generateData();
-        const mappedReads = mappedReadData.map(m => new MappedRead(m));
-        mappedReads.forEach(m => {
-          m.projectLabel = alignment.projectLabel;
-          m.projectId = alignment.projectId;
-          m.sampleName = alignment.sampleName;
-          m.sampleId = alignment.sampleId;
-          m.alignmentName = alignment.name;
-          m.alignmentId = alignment._id;
-        });
-        await saveAndIndexAll(mappedReads);
-      }
-    }
-  }
+  const alignments = await generateEntities(
+    samples,
+    alignmentSeedConfig,
+    nAlignments,
+    (item, sample) =>
+      new Alignment({
+        ...item,
+        projectLabel: sample.projectLabel,
+        projectId: sample.projectId,
+        sample: sample.name,
+        sampleId: sample._id
+      })
+  );
+  await saveAndIndexAllT(alignments);
+  log(`Indexed ${alignments.length} alignments`, saveAndIndexAllT);
+
+  const genomes = await generateEntitiesHasMany(
+    samples,
+    genomeSeedConfig,
+    nGenomes,
+    (item, samples) =>
+      new Genome({
+        ...item,
+        sampleCount: samples.length,
+        samples: samples.map(x => x._id)
+      })
+  );
+  await saveAndIndexAllT(genomes);
+  log(`Indexed ${genomes.length} genomes`, saveAndIndexAllT);
 
   console.log("Database seeded");
 

@@ -3,57 +3,75 @@ import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
 
-const collection = "alignment";
-export const index = "alignments";
+const collection = "genome";
+export const index = "genomes";
 export const type = "_doc";
 
-const AlignmentSchema = new Schema(
+const GenomeSchema = new Schema(
   {
-    projectId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-      es_indexed: true,
-      es_type: "keyword"
-    },
-    projectLabel: {
-      type: String,
-      description: "projectLabel",
-      es_indexed: true,
-      es_type: "keyword"
-    },
-    sampleId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Sample",
-      es_indexed: true,
-      es_type: "keyword"
-    },
-    sample: {
-      type: String,
-      description: "sample",
-      es_indexed: true,
-      es_type: "keyword"
-    },
-    aligner: {
-      type: String,
-      description: "aligner",
-      es_indexed: true,
-      es_type: "keyword"
-    },
     name: {
       type: String,
       description: "name",
       es_indexed: true,
       es_type: "keyword"
     },
-    platform: {
+    length: {
+      type: Number,
+      description: "length",
+      es_indexed: true,
+      es_type: "long"
+    },
+    organism: {
       type: String,
-      description: "platform",
+      description: "organism",
       es_indexed: true,
       es_type: "keyword"
     },
-    type: {
+    taxonomy: {
+      type: Array,
+      description: "taxonomy",
+      es_indexed: true,
+      es_type: "keyword"
+    },
+    strand: {
+      type: Boolean,
+      description: "strand",
+      es_indexed: true,
+      es_type: "boolean"
+    },
+    accession: {
       type: String,
-      description: "type",
+      description: "accession",
+      es_indexed: true,
+      es_type: "keyword"
+    },
+    gi: {
+      type: Number,
+      description: "gi",
+      es_indexed: true,
+      es_type: "long"
+    },
+    taxonId: {
+      type: Number,
+      description: "taxonId",
+      es_indexed: true,
+      es_type: "long"
+    },
+    left: {
+      type: Number,
+      description: "left",
+      es_indexed: true,
+      es_type: "long"
+    },
+    sampleCount: {
+      type: Number,
+      description: "strand",
+      es_indexed: true,
+      es_type: "long"
+    },
+    samples: {
+      type: Array,
+      description: "samples",
       es_indexed: true,
       es_type: "keyword"
     },
@@ -62,18 +80,6 @@ const AlignmentSchema = new Schema(
       description: "version",
       es_indexed: true,
       es_type: "long"
-    },
-    outfile: {
-      type: String,
-      description: "outfile",
-      es_indexed: true,
-      es_type: "text"
-    },
-    infile: {
-      type: String,
-      description: "infile",
-      es_indexed: true,
-      es_type: "text"
     }
   },
   {
@@ -96,12 +102,12 @@ const AlignmentSchema = new Schema(
   }
 );
 
-AlignmentSchema.plugin(mongooseElasticsearch, {
+GenomeSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
   index,
   type
 });
 
-export const Alignment = mongoose.model("Alignment", AlignmentSchema);
+export const Genome = mongoose.model("Genome", GenomeSchema);
 
-export default AlignmentSchema;
+export default GenomeSchema;
