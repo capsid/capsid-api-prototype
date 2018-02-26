@@ -75,7 +75,7 @@ const main = async () => {
     } catch (e) {
       message = "invalid or expired token";
     }
-    message ? res.status(403).send({ errors: [{ message }] }) : next();
+    message ? res.send({ errors: [{ code: 403, message }] }) : next();
   });
 
   server.start(serverOpts, ({ port }) =>
