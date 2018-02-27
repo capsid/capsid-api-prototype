@@ -10,8 +10,9 @@ import { Alignment } from "@capsid/mongo/schema/alignments";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { Genome } from "@capsid/mongo/schema/genomes";
 import { User } from "@capsid/mongo/schema/users";
+import { Access } from "@capsid/mongo/schema/access";
 
-const models = [Project, Sample, Alignment, MappedRead, Genome, User];
+const models = [Project, Sample, Alignment, MappedRead, Genome, User, Access];
 
 const email = process.env.SUPER_USER;
 
@@ -197,15 +198,21 @@ const main = async () => {
   await saveAndIndexAllT(genomes);
   log(`Indexed ${genomes.length} genomes`, saveAndIndexAllT);
 
-  const superUser = new User({
-    email,
-    superUser: true,
-    roles: projects.reduce(
-      (obj, x) => ({ ...obj, [x._id]: ["admin", "write", "read"] }),
-      {}
-    )
-  });
+  const superUser = new User({ email, superUser: true });
   await superUser.save();
+
+  const accesses = projects.map(
+    ({ _id, label }) =>
+      new Access({
+        projectId: _id,
+        projectLabel: label,
+        userId: superUser._id,
+        userEmail: superUser.email,
+        access: ["admin", "write", "read"]
+      })
+  );
+  await Promise.all(accesses.map(x => x.save()));
+
   console.log(`Created super user with email "${superUser.email}"`);
 
   console.log("Database seeded");
