@@ -12,8 +12,7 @@ import { AlignmentTC } from "@capsid/graphql/alignments";
 import GenomeEsTC from "@capsid/es/schema/genomes";
 import { GenomeTC } from "@capsid/graphql/genomes";
 
-import MappedReadEsTC from "@capsid/es/schema/mappedReads";
-import { MappedReadTC } from "@capsid/graphql/mappedReads";
+import { AccessTC } from "@capsid/graphql/access";
 
 GQC.rootQuery().addFields({
   projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
@@ -40,11 +39,11 @@ GQC.rootQuery().addFields({
   genomeOne: GenomeTC.getResolver("findOne"),
   genomeById: GenomeTC.getResolver("findById"),
 
-  mappedReadEsConnection: MappedReadEsTC.getResolver("searchConnection"),
-  mappedReadMongoConnection: MappedReadTC.getResolver("connection"),
-  mappedReadMany: MappedReadTC.getResolver("findMany"),
-  mappedReadOne: MappedReadTC.getResolver("findOne"),
-  mappedReadById: MappedReadTC.getResolver("findById")
+  accessMany: AccessTC.getResolver("findMany")
+});
+
+GQC.rootMutation().addFields({
+  accessAdd: AccessTC.getResolver("accessAdd")
 });
 
 const schema = GQC.buildSchema();
