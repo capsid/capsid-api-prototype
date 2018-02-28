@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "description": "CaPSID API",
   "scripts": {
-    "start": "BABEL_DISABLE_CACHE=1 nodemon -e js,graphql src/server.js --exec 'node --require 'dotenv/config' --require 'babel-register''",
+    "start": "BABEL_DISABLE_CACHE=1 nodemon -e js,graphql src/server.js --exec 'node --require 'dotenv/config' --require '@babel/register''",
     "build": "babel src -d dist",
     "serve": "node dist/server.js",
-    "index:create": "node --require 'dotenv/config' --require 'babel-register' ./scripts/create_indices.js",
-    "index:seed": "node --require 'dotenv/config' --require 'babel-register' ./scripts/seed.js",
+    "index:create": "node --require 'dotenv/config' --require '@babel/register' ./scripts/create_indices.js",
+    "index:seed": "node --require 'dotenv/config' --require '@babel/register' ./scripts/seed.js",
     "index:delete": "sh ./scripts/delete_indices",
     "test": "jest"
   },
@@ -39,14 +39,18 @@
     "nodemon": "^1.14.12",
     "prettier": "^1.10.2",
     "timely": "^0.2.0",
-    "url-join": "^4.0.0"
+    "url-join": "^4.0.0",
+    "validator": "^9.4.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
+    "@babel/cli": "^7.0.0-beta.40",
+    "@babel/core": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
+    "@babel/preset-env": "^7.0.0-beta.40",
+    "@babel/register": "^7.0.0-beta.40",
     "babel-eslint": "^8.2.1",
     "babel-plugin-module-resolver": "^3.1.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "eslint": "^4.17.0",
     "eslint-config-google": "^0.9.1",
     "eslint-config-prettier": "^2.9.0",

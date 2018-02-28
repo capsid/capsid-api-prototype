@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
@@ -7,7 +7,7 @@ const collection = "alignment";
 export const index = "alignments";
 export const type = "_doc";
 
-const AlignmentSchema = new Schema(
+const AlignmentSchema = new mongoose.Schema(
   {
     projectId: {
       type: mongoose.Schema.Types.ObjectId,

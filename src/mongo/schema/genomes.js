@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
@@ -7,7 +7,7 @@ const collection = "genome";
 export const index = "genomes";
 export const type = "_doc";
 
-const GenomeSchema = new Schema(
+const GenomeSchema = new mongoose.Schema(
   {
     name: {
       type: String,

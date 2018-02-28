@@ -201,18 +201,6 @@ const main = async () => {
   const superUser = new User({ email, superUser: true });
   await superUser.save();
 
-  const accesses = projects.map(
-    ({ _id, label }) =>
-      new Access({
-        projectId: _id,
-        projectLabel: label,
-        userId: superUser._id,
-        userEmail: superUser.email,
-        access: ["admin", "write", "read"]
-      })
-  );
-  await Promise.all(accesses.map(x => x.save()));
-
   console.log(`Created super user with email "${superUser.email}"`);
 
   console.log("Database seeded");

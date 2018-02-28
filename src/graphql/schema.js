@@ -14,6 +14,8 @@ import { GenomeTC } from "@capsid/graphql/genomes";
 
 import { AccessTC } from "@capsid/graphql/access";
 
+import { projectAdminAccess } from "@capsid/graphql/resolvers";
+
 GQC.rootQuery().addFields({
   projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
   projectMongoConnection: ProjectTC.getResolver("connection"),
@@ -43,7 +45,10 @@ GQC.rootQuery().addFields({
 });
 
 GQC.rootMutation().addFields({
-  accessAdd: AccessTC.getResolver("accessAdd")
+  ...projectAdminAccess({
+    accessAdd: AccessTC.getResolver("accessAdd"),
+    accessRemoveOne: AccessTC.getResolver("removeOne")
+  })
 });
 
 const schema = GQC.buildSchema();

@@ -1,8 +1,8 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const collection = "user";
 
-const UserSchema = new Schema(
+const UserSchema = new mongoose.Schema(
   {
     email: { type: String },
     superUser: { type: Boolean }

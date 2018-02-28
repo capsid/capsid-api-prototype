@@ -1,26 +1,27 @@
 {
-    "presets": [
-    ["env", {
+  "presets": [
+    [
+      "@babel/env",
+      {
         "targets": {
-            "node": "current"
+          "node": "current"
         }
-        }]
-    ],
-    "plugins": [
-        "transform-object-rest-spread",
-        [
-          "module-resolver",
-          {
-            "root": [
-              "./"
-            ],
-            "alias": {
-              "@capsid/graphql": "./src/graphql",
-              "@capsid/mongo": "./src/mongo",
-              "@capsid/es": "./src/es"
-            }
-          }
-        ]
-      ]
-    
+      }
+    ]
+  ],
+  "plugins": [
+    "@babel/proposal-optional-chaining",
+    "@babel/proposal-object-rest-spread",
+    [
+      "babel-plugin-module-resolver",
+      {
+        "root": ["./"],
+        "alias": {
+          "@capsid/graphql": "./src/graphql",
+          "@capsid/mongo": "./src/mongo",
+          "@capsid/es": "./src/es"
+        }
+      }
+    ]
+  ]
 }

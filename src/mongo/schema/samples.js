@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import mongooseElasticsearch from "mongoose-elasticsearch-xp";
 
 import elasticClient from "@capsid/es/client";
@@ -7,7 +7,7 @@ const collection = "sample";
 export const index = "samples";
 export const type = "_doc";
 
-const SampleSchema = new Schema(
+const SampleSchema = new mongoose.Schema(
   {
     projectId: {
       type: mongoose.Schema.Types.ObjectId,
