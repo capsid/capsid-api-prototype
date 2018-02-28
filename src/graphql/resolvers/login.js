@@ -26,11 +26,10 @@ const login = async ({ args: { token, provider } }) => {
   const { context: { user: egoUser } } = jwt.decode(egoJwt);
 
   const user = await User.findOne({ email: egoUser.email });
-  if (!user) throw new Error("User not found");
-
   const access = await Access.find({ userEmail: egoUser.email });
 
-  if (!user.superUser && !access.length) throw new Error("User not found");
+  if (!user || (!user.superUser && !access.length))
+    throw new Error("User not found");
 
   return {
     token: egoJwt,
