@@ -39,12 +39,6 @@ const engineOpts = {
   graphqlPort: process.env.PORT
 };
 
-const verifyJwt = ({ request, publicKey }) => {
-  const op = publicKey ? jwt.verify : jwt.decode;
-  const { context: { user } } = op(request.headers.token, publicKey);
-  return user;
-};
-
 const main = async () => {
   mongoose.connect(process.env.MONGO_HOST);
 
@@ -58,26 +52,22 @@ const main = async () => {
   const server = new GraphQLServer({
     schema,
     context: async ({ request }) => {
-      const { email } = verifyJwt({ request });
-      const user = await User.findOne({ email });
-      return { user };
+      try {
+        let { context: { user: { email } } } = jwt.verify(
+          request.headers.token,
+          publicKey
+        );
+        const user = await User.findOne({ email });
+        return { user };
+      } catch (e) {
+        return {};
+      }
     }
   });
 
   server.express.use(cors()); // graphql-yoga cors doesn't seem to work
   server.express.use(compression());
   server.express.use(engine.expressMiddleware());
-  server.express.use(async (request, res, next) => {
-    let message = null;
-    try {
-      const user = verifyJwt({ request, publicKey });
-      if (!await User.count({ email: user.email })) message = "user not found";
-    } catch (e) {
-      message = "invalid or expired token";
-    }
-    message ? res.send({ errors: [{ code: 403, message }] }) : next();
-  });
-
   server.start(serverOpts, ({ port }) =>
     console.log(`Server is running on localhost: ${port}`)
   );

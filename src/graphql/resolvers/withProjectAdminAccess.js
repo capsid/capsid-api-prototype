@@ -1,6 +1,6 @@
 import { Access } from "@capsid/mongo/schema/access";
 
-const projectAdminAccess = resolvers =>
+const withProjectAdminAccess = resolvers =>
   Object.keys(resolvers).reduce(
     (obj, k) => ({
       ...obj,
@@ -24,4 +24,4 @@ const projectAdminAccess = resolvers =>
     {}
   );
 
-export default projectAdminAccess;
+export default withProjectAdminAccess;

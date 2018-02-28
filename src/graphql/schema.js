@@ -14,40 +14,48 @@ import { GenomeTC } from "@capsid/graphql/genomes";
 
 import { AccessTC } from "@capsid/graphql/access";
 
-import { projectAdminAccess } from "@capsid/graphql/resolvers";
+import { LoginTC } from "@capsid/graphql/login";
+
+import { withUser, withProjectAdminAccess } from "@capsid/graphql/resolvers";
 
 GQC.rootQuery().addFields({
-  projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
-  projectMongoConnection: ProjectTC.getResolver("connection"),
-  projectMany: ProjectTC.getResolver("findMany"),
-  projectOne: ProjectTC.getResolver("findOne"),
-  projectById: ProjectTC.getResolver("findById"),
+  login: LoginTC.getResolver("login"),
 
-  sampleEsConnection: SampleEsTC.getResolver("searchConnection"),
-  sampleMongoConnection: SampleTC.getResolver("connection"),
-  sampleMany: SampleTC.getResolver("findMany"),
-  sampleOne: SampleTC.getResolver("findOne"),
-  sampleById: SampleTC.getResolver("findById"),
+  ...withUser({
+    projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
+    projectMongoConnection: ProjectTC.getResolver("connection"),
+    projectMany: ProjectTC.getResolver("findMany"),
+    projectOne: ProjectTC.getResolver("findOne"),
+    projectById: ProjectTC.getResolver("findById"),
 
-  alignmentEsConnection: AlignmentEsTC.getResolver("searchConnection"),
-  alignmentMongoConnection: AlignmentTC.getResolver("connection"),
-  alignmentMany: AlignmentTC.getResolver("findMany"),
-  alignmentOne: AlignmentTC.getResolver("findOne"),
-  alignmentById: AlignmentTC.getResolver("findById"),
+    sampleEsConnection: SampleEsTC.getResolver("searchConnection"),
+    sampleMongoConnection: SampleTC.getResolver("connection"),
+    sampleMany: SampleTC.getResolver("findMany"),
+    sampleOne: SampleTC.getResolver("findOne"),
+    sampleById: SampleTC.getResolver("findById"),
 
-  genomeEsConnection: GenomeEsTC.getResolver("searchConnection"),
-  genomeMongoConnection: GenomeTC.getResolver("connection"),
-  genomeMany: GenomeTC.getResolver("findMany"),
-  genomeOne: GenomeTC.getResolver("findOne"),
-  genomeById: GenomeTC.getResolver("findById"),
+    alignmentEsConnection: AlignmentEsTC.getResolver("searchConnection"),
+    alignmentMongoConnection: AlignmentTC.getResolver("connection"),
+    alignmentMany: AlignmentTC.getResolver("findMany"),
+    alignmentOne: AlignmentTC.getResolver("findOne"),
+    alignmentById: AlignmentTC.getResolver("findById"),
 
-  accessMany: AccessTC.getResolver("findMany")
+    genomeEsConnection: GenomeEsTC.getResolver("searchConnection"),
+    genomeMongoConnection: GenomeTC.getResolver("connection"),
+    genomeMany: GenomeTC.getResolver("findMany"),
+    genomeOne: GenomeTC.getResolver("findOne"),
+    genomeById: GenomeTC.getResolver("findById"),
+
+    accessMany: AccessTC.getResolver("findMany")
+  })
 });
 
 GQC.rootMutation().addFields({
-  ...projectAdminAccess({
-    accessAdd: AccessTC.getResolver("accessAdd"),
-    accessRemoveOne: AccessTC.getResolver("removeOne")
+  ...withUser({
+    ...withProjectAdminAccess({
+      accessAdd: AccessTC.getResolver("accessAdd"),
+      accessRemoveOne: AccessTC.getResolver("removeOne")
+    })
   })
 });
 
