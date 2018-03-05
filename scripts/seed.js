@@ -61,7 +61,7 @@ const genomeSeedConfig = {
   taxonomy: [{ faker: "lorem.word", length: 6 }],
   strand: { values: [true, false] },
   accession: { faker: "lorem.word" },
-  gi: { faker: 'random.number({"min": 1000000, "max": 5000000})' },
+  gi: { incrementalId: 1 },
   taxonId: { faker: 'random.number({"min": 10000, "max": 50000})' },
   version: { faker: 'random.number({"min": 0, "max": 5})' }
 };
