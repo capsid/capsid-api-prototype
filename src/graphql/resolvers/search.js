@@ -11,77 +11,28 @@ import { index as alignmentIndex } from "@capsid/mongo/schema/alignments";
 import { index as sampleIndex } from "@capsid/mongo/schema/samples";
 import { index as genomeIndex } from "@capsid/mongo/schema/genomes";
 
-const testSqon = {
-  content: [
-    // {
-    //   content: {
-    //     field: "sample.name",
-    //     value: ["enim"]
-    //   },
-    //   op: "in"
-    // },
-    {
-      content: {
-        field: "sample.version",
-        value: 5
-      },
-      op: ">="
-    },
-    {
-      content: {
-        field: "sample.version",
-        value: 6
-      },
-      op: "<="
-    },
-    {
-      content: {
-        field: "genome.length",
-        value: 3000
-      },
-      op: ">="
-    }
-    // {
-    //   content: {
-    //     fields: ["genome.accession", "genome.organism"],
-    //     value: "accusamus"
-    //   },
-    //   op: "filter"
-    // }
-  ],
-  op: "and"
-};
-
-const testAggs = {
-  sample: [
-    { field: "version", type: "stats" },
-    { field: "cancer", type: "terms" }
-  ],
-  genome: [{ field: "length", type: "stats" }]
-};
-
 const entities = [
   {
-    name: "sample",
+    name: "samples",
     typeName: "SampleSearch",
     mappedReadField: "sampleId",
     index: sampleIndex
   },
   {
-    name: "genome",
+    name: "genomes",
     typeName: "GenomeSearch",
     field: "gi",
     mappedReadField: "genome",
     index: genomeIndex
   },
   {
-    name: "project",
+    name: "projects",
     typeName: "ProjectSearch",
     mappedReadField: "projectId",
     index: projectIndex
   },
   {
-    name: "alignment",
+    name: "alignments",
     typeName: "AlignmentSearch",
     mappedReadField: "alignmentId",
     index: alignmentIndex
@@ -94,6 +45,7 @@ const queryEntityIds = (entities, sqonEntityMap) =>
       ({ name, field, index }) =>
         new Promise((resolve, reject) => {
           const fetchMore = (results = []) => (err, response) => {
+            if (err) return reject(err);
             const nextResults = [
               ...results,
               ...response.hits.hits
@@ -112,6 +64,7 @@ const queryEntityIds = (entities, sqonEntityMap) =>
           client.search(
             {
               index,
+              type: "_doc",
               scroll: "2s",
               size: 500,
               sort: ["_id"],
@@ -132,14 +85,12 @@ const queryEntityIds = (entities, sqonEntityMap) =>
   );
 
 export default async ({
-  args: { query, aggs },
+  args,
   info,
   fieldInfo = parseResolveInfo(info),
-  sqon = JSON.parse(query)
+  sqon = JSON.parse(args.query),
+  aggs = JSON.parse(args.aggs)
 }) => {
-  sqon = testSqon;
-  aggs = testAggs;
-
   const entityIds = await queryEntityIds(entities, splitSqon(sqon));
 
   const uniqueMatchingReads = await MappedRead.esSearch({
@@ -180,6 +131,7 @@ export default async ({
         ({ name, field, index, gqlFields }) =>
           new Promise((resolve, reject) => {
             const handleResult = (err, response) => {
+              if (err) return reject(err);
               const hits = response.hits.hits.map(x => x._source);
               resolve({
                 name,
@@ -199,9 +151,12 @@ export default async ({
               : client.search(
                   {
                     index,
+                    type: "_doc",
+                    sort: hitsArgs.sort?.map(x => x.split("__").join(":")) || [
+                      "_id"
+                    ],
                     ...(hitsField ? { scroll: "30m" } : null),
                     size: hitsField ? hitsArgs.size : 0,
-                    sort: hitsArgs.sort || ["_id"],
                     body: {
                       query: {
                         terms: {

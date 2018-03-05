@@ -5,7 +5,6 @@ import elasticClient from "@capsid/es/client";
 
 const collection = "sample";
 export const index = "samples";
-export const type = "_doc";
 
 const SampleSchema = new mongoose.Schema(
   {
@@ -81,7 +80,7 @@ const SampleSchema = new mongoose.Schema(
 SampleSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
   index,
-  type
+  type: "_doc"
 });
 
 export const Sample = mongoose.model("Sample", SampleSchema);

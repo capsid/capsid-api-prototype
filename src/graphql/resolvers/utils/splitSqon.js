@@ -1,5 +1,5 @@
-
 export default sqon => {
+  if (!sqon) return {};
   const sqonMap = sqon.content.reduce((obj, x) => {
     const { content, op } = x;
     if (["and", "or"].includes(op))

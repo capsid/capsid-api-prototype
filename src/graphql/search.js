@@ -30,10 +30,10 @@ AlignmentSearchTC.addFields(fields(AlignmentEsTC));
 
 export const SearchTC = TypeComposer.create(`type Search`);
 SearchTC.addFields({
-  sample: SampleSearchTC,
-  genome: GenomeSearchTC,
-  project: ProjectSearchTC,
-  alignment: AlignmentSearchTC
+  samples: SampleSearchTC,
+  genomes: GenomeSearchTC,
+  projects: ProjectSearchTC,
+  alignments: AlignmentSearchTC
 });
 
 SearchTC.addResolver({
