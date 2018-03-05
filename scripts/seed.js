@@ -20,6 +20,7 @@ const nProjects = +process.env.N_PROJECTS || 10;
 const nSamples = +process.env.N_SAMPLES || 40; // per project
 const nAlignments = +process.env.N_ALIGNMENTS || 2; // per sample
 const nGenomes = +process.env.N_GENOMES || 16000; // total
+const nMappedReads = +process.env.N_READS || 20000; // total
 
 const projectSeedConfig = {
   id: { chance: "guid" },
@@ -76,7 +77,6 @@ const mappedReadConfig = {
   mapq: { faker: 'random.number({"min": 10, "max": 100})' },
   pairEnd: { values: [0] },
   minQual: { faker: 'random.number({"min": 1, "max": 10})' },
-  genome: { faker: 'random.number({"min": 100, "max": 200})' },
   md: { chance: "guid" },
   cigar: { values: [[0, 65], [100, 200], [203, 300]] },
   mismatch: { faker: 'random.number({"min": 5, "max": 15})' },
@@ -123,8 +123,10 @@ const generateEntities = async (parents, seedConfig, n, mapper) => {
 
 const randomInRange = (min, max) => Math.floor(Math.random() * max) + min;
 
+const pickRandomElement = arr => arr[randomInRange(0, arr.length)];
+
 const pickRandomElements = (arr, n) =>
-  [...Array(n)].map(x => arr[randomInRange(0, arr.length)]);
+  [...Array(n)].map(x => pickRandomElement(arr));
 
 const generateEntitiesHasMany = async (set, seedConfig, n, mapper) => {
   const { items } = await generateData(seedConfig, n);
@@ -149,8 +151,11 @@ const main = async () => {
   await deleteAllT();
   log(`Deleted all data`, deleteAllT);
 
-  const { items } = await generateData(projectSeedConfig, nProjects);
-  const projects = items.map(x => new Project(x));
+  const { items: projectItems } = await generateData(
+    projectSeedConfig,
+    nProjects
+  );
+  const projects = projectItems.map(x => new Project(x));
   await saveAndIndexAllT(projects);
   log(`Indexed ${projects.length} projects`, saveAndIndexAllT);
 
@@ -197,6 +202,27 @@ const main = async () => {
   );
   await saveAndIndexAllT(genomes);
   log(`Indexed ${genomes.length} genomes`, saveAndIndexAllT);
+
+  const { items: mappedReadItems } = await generateData(
+    mappedReadConfig,
+    nMappedReads
+  );
+  const mappedReads = mappedReadItems.map(x => {
+    const alignment = pickRandomElement(alignments);
+    const genome = pickRandomElement(genomes);
+    return new MappedRead({
+      ...x,
+      projectLabel: alignment.projectLabel,
+      projectId: alignment.projectId,
+      sample: alignment.sample,
+      sampleId: alignment.sampleId,
+      alignment: alignment.name,
+      alignmentId: alignment._id,
+      genome: genome.gi
+    });
+  });
+  await saveAndIndexAllT(mappedReads);
+  log(`Indexed ${mappedReads.length} genomes`, saveAndIndexAllT);
 
   const superUser = new User({ email, superUser: true });
   await superUser.save();

@@ -21,9 +21,14 @@ const login = async ({ args: { token, provider } }) => {
   if (!token) throw new Error(`Missing token`);
   if (!provider) throw new Error(`Missing provider`);
 
-  const egoJwt = await requestEgoJwt({ token, provider });
-
-  const { context: { user: egoUser } } = jwt.decode(egoJwt);
+  let egoJwt, egoUser;
+  try {
+    egoJwt = await requestEgoJwt({ token, provider });
+    egoUser = jwt.decode(egoJwt).context.user;
+  } catch (e) {
+    console.error(e);
+    throw new Error("An error has occurred, please try again");
+  }
 
   const user = await User.findOne({ email: egoUser.email });
   const access = await Access.find({ userEmail: egoUser.email });

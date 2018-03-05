@@ -5,7 +5,6 @@ import elasticClient from "@capsid/es/client";
 
 const collection = "genome";
 export const index = "genomes";
-export const type = "_doc";
 
 const GenomeSchema = new mongoose.Schema(
   {
@@ -105,7 +104,7 @@ const GenomeSchema = new mongoose.Schema(
 GenomeSchema.plugin(mongooseElasticsearch, {
   client: elasticClient,
   index,
-  type
+  type: "_doc"
 });
 
 export const Genome = mongoose.model("Genome", GenomeSchema);
