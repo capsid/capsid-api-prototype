@@ -21,9 +21,10 @@ import { withUser, withProjectAdminAccess } from "@capsid/graphql/resolvers";
 
 GQC.rootQuery().addFields({
   login: LoginTC.getResolver("login"),
-  search: SearchTC.getResolver("search"),
 
   ...withUser({
+    search: SearchTC.getResolver("search"),
+
     projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
     projectEs: ProjectEsTC.getResolver("search"),
     projectMongoConnection: ProjectTC.getResolver("connection"),
