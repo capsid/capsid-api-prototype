@@ -4,6 +4,7 @@ import {
 } from "graphql-parse-resolve-info";
 
 import client from "@capsid/es/client";
+import { Access } from "@capsid/mongo/schema/access";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { splitSqon, aggsToEs, sqonToEs } from "@capsid/graphql/resolvers/utils";
 import { index as projectIndex } from "@capsid/mongo/schema/projects";
@@ -16,7 +17,8 @@ const entities = [
     name: "samples",
     typeName: "SampleSearch",
     mappedReadField: "sampleId",
-    index: sampleIndex
+    index: sampleIndex,
+    scope: { projectId: "projectId" }
   },
   {
     name: "genomes",
@@ -29,20 +31,22 @@ const entities = [
     name: "projects",
     typeName: "ProjectSearch",
     mappedReadField: "projectId",
-    index: projectIndex
+    index: projectIndex,
+    scope: { projectId: "_id" }
   },
   {
     name: "alignments",
     typeName: "AlignmentSearch",
     mappedReadField: "alignmentId",
-    index: alignmentIndex
+    index: alignmentIndex,
+    scope: { projectId: "projectId" }
   }
 ];
 
-const queryEntityIds = (entities, sqonEntityMap) =>
+const queryEntityIds = (entities, sqonEntityMap, userScope) =>
   Promise.all(
     entities.map(
-      ({ name, field, index }) =>
+      ({ name, field, index, scope }) =>
         new Promise((resolve, reject) => {
           const fetchMore = (results = []) => (err, response) => {
             if (err) return reject(err);
@@ -60,7 +64,7 @@ const queryEntityIds = (entities, sqonEntityMap) =>
                 fetchMore(nextResults, resolve)
               );
           };
-          const esQuery = sqonToEs(sqonEntityMap[name]);
+          const sqonQuery = sqonToEs(sqonEntityMap[name]);
           client.search(
             {
               index,
@@ -75,7 +79,18 @@ const queryEntityIds = (entities, sqonEntityMap) =>
                     docvalue_fields: ["_uid"]
                   }),
               body: {
-                ...(esQuery && { query: esQuery })
+                query: {
+                  bool: {
+                    must: [
+                      ...(scope && userScope
+                        ? Object.keys(scope).map(k => ({
+                            terms: { [scope[k]]: userScope[k] }
+                          }))
+                        : []),
+                      ...(sqonQuery ? [{ ...sqonQuery }] : [])
+                    ]
+                  }
+                }
               }
             },
             fetchMore()
@@ -85,13 +100,20 @@ const queryEntityIds = (entities, sqonEntityMap) =>
   );
 
 export default async ({
+  context: { user },
   args,
   info,
   fieldInfo = parseResolveInfo(info),
   sqon = JSON.parse(args.query),
   aggs = JSON.parse(args.aggs)
 }) => {
-  const entityIds = await queryEntityIds(entities, splitSqon(sqon));
+  const entityIds = await queryEntityIds(
+    entities,
+    splitSqon(sqon),
+    !user.superUser && {
+      projectId: (await Access.find({ userId: user.id })).map(x => x.projectId)
+    }
+  );
 
   const uniqueMatchingReads = await MappedRead.esSearch({
     size: 0,
