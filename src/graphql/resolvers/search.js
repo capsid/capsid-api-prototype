@@ -165,7 +165,12 @@ export default async ({
                           ].buckets.map(({ key }) => key)
                         }
                       },
-                      ...(aggs[name] && { aggs: aggsToEs(aggs[name]) })
+                      ...(aggs[name] && {
+                        aggs: aggsToEs({
+                          sqon: splitSqon(sqon)[name],
+                          aggs: aggs[name]
+                        })
+                      })
                     }
                   },
                   handleResult
