@@ -6,15 +6,22 @@ import ProjectEsTC from "@capsid/es/schema/projects";
 import AlignmentEsTC from "@capsid/es/schema/alignments";
 import { search } from "@capsid/graphql/resolvers";
 
-const fields = tc => ({
-  aggs: { type: "JSON" },
-  hits: {
-    type: [tc],
-    args: { size: "Int", after: "String", sort: ["String"] }
-  },
-  total: { type: "Int" },
-  endCursor: { type: "String" }
-});
+const fields = tc => {
+  const newType = tc.clone(`${tc.getTypeName()}Search`);
+  newType.addFields({
+    statistics: { type: "JSON" }
+  });
+  return {
+    aggs: { type: "JSON" },
+    hits: {
+      type: [newType],
+      args: { size: "Int", after: "String", sort: ["String"] }
+    },
+    total: { type: "Int" },
+    endCursor: { type: "String" },
+    hasStatistics: { type: "Boolean" }
+  };
+};
 
 const SampleSearchTC = TypeComposer.create(`type SampleSearch`);
 SampleSearchTC.addFields(fields(SampleEsTC));
