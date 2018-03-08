@@ -3,7 +3,7 @@ export default mapping =>
     const field = mapping[key];
     return {
       ...obj,
-      [key]: ["keyword", "text"].includes(field.type)
+      [key]: ["keyword", "text", "long"].includes(field.type)
         ? { ...field, fields: { search: { type: "text" } } }
         : field
     };
