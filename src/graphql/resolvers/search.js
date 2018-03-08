@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {
   parseResolveInfo,
   simplifyParsedResolveInfoFragmentWithType
@@ -5,6 +6,7 @@ import {
 
 import client from "@capsid/es/client";
 import { Access } from "@capsid/mongo/schema/access";
+import { Statistics } from "@capsid/mongo/schema/statistics";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { splitSqon, aggsToEs, sqonToEs } from "@capsid/graphql/resolvers/utils";
 import { index as projectIndex } from "@capsid/mongo/schema/projects";
@@ -12,41 +14,10 @@ import { index as alignmentIndex } from "@capsid/mongo/schema/alignments";
 import { index as sampleIndex } from "@capsid/mongo/schema/samples";
 import { index as genomeIndex } from "@capsid/mongo/schema/genomes";
 
-const entities = [
-  {
-    name: "samples",
-    typeName: "SampleSearch",
-    mappedReadField: "sampleId",
-    index: sampleIndex,
-    scope: { projectId: "projectId" }
-  },
-  {
-    name: "genomes",
-    typeName: "GenomeSearch",
-    field: "gi",
-    mappedReadField: "genome",
-    index: genomeIndex
-  },
-  {
-    name: "projects",
-    typeName: "ProjectSearch",
-    mappedReadField: "projectId",
-    index: projectIndex,
-    scope: { projectId: "_id" }
-  },
-  {
-    name: "alignments",
-    typeName: "AlignmentSearch",
-    mappedReadField: "alignmentId",
-    index: alignmentIndex,
-    scope: { projectId: "projectId" }
-  }
-];
-
-const queryEntityIds = (entities, sqonEntityMap, userScope) =>
+const fetchEntityIds = ({ entities, sqonMap, userScope }) =>
   Promise.all(
     entities.map(
-      ({ name, field, index, scope }) =>
+      ({ name, field, index, scope, ...rest }) =>
         new Promise((resolve, reject) => {
           const fetchMore = (results = []) => (err, response) => {
             if (err) return reject(err);
@@ -57,14 +28,21 @@ const queryEntityIds = (entities, sqonEntityMap, userScope) =>
                 .map(x => (field ? x[field] : x))
             ];
             if (nextResults.length === response.hits.total)
-              resolve({ name, results: nextResults });
+              resolve({
+                ...rest,
+                name,
+                field,
+                index,
+                scope,
+                results: nextResults
+              });
             else
               client.scroll(
                 { scroll: "2s", scrollId: response._scroll_id },
                 fetchMore(nextResults, resolve)
               );
           };
-          const sqonQuery = sqonToEs(sqonEntityMap[name]);
+          const sqonQuery = sqonToEs(sqonMap[name]);
           client.search(
             {
               index,
@@ -99,47 +77,15 @@ const queryEntityIds = (entities, sqonEntityMap, userScope) =>
     )
   );
 
-export default async ({
-  context: { user },
-  args,
+const fetchResults = ({
+  entities,
+  aggs,
   info,
-  fieldInfo = parseResolveInfo(info),
-  sqon = JSON.parse(args.query),
-  aggs = JSON.parse(args.aggs)
-}) => {
-  const entityIds = await queryEntityIds(
-    entities,
-    splitSqon(sqon),
-    !user.superUser && {
-      projectId: (await Access.find({ userId: user.id })).map(x => x.projectId)
-    }
-  );
-
-  const uniqueMatchingReads = await MappedRead.esSearch({
-    size: 0,
-    query: {
-      bool: {
-        must: entityIds.map(
-          ({
-            name,
-            results,
-            field = entities.find(x => x.name === name).mappedReadField
-          }) => ({
-            terms: { [field]: results }
-          })
-        )
-      }
-    },
-    aggs: entities.reduce(
-      (obj, x) => ({
-        ...obj,
-        [x.name]: { terms: { field: x.mappedReadField, size: 999999 } }
-      }),
-      {}
-    )
-  });
-
-  const results = await Promise.all(
+  idMap,
+  sqonMap,
+  fieldInfo = parseResolveInfo(info)
+}) =>
+  Promise.all(
     entities
       .map(x => ({
         ...x,
@@ -181,15 +127,11 @@ export default async ({
                     size: hitsField ? hitsArgs.size : 0,
                     body: {
                       query: {
-                        terms: {
-                          [field || "_id"]: uniqueMatchingReads.aggregations[
-                            name
-                          ].buckets.map(({ key }) => key)
-                        }
+                        terms: { [field || "_id"]: idMap[name] }
                       },
                       ...(aggs[name] && {
                         aggs: aggsToEs({
-                          sqon: splitSqon(sqon)[name],
+                          sqon: sqonMap[name],
                           aggs: aggs[name]
                         })
                       })
@@ -201,5 +143,138 @@ export default async ({
       )
   );
 
-  return results.reduce((obj, { name, ...x }) => ({ ...obj, [name]: x }), {});
+const fetchIdMapFromReads = async ({ entitiesWithIds }) => {
+  const response = await MappedRead.esSearch({
+    size: 0,
+    query: {
+      bool: {
+        must: entitiesWithIds.map(({ name, results, mappedReadField }) => ({
+          terms: { [mappedReadField]: results }
+        }))
+      }
+    },
+    aggs: entitiesWithIds.reduce(
+      (obj, x) => ({
+        ...obj,
+        [x.name]: { terms: { field: x.mappedReadField, size: 999999 } }
+      }),
+      {}
+    )
+  });
+  return Object.keys(response.aggregations).reduce(
+    (obj, k) => ({
+      ...obj,
+      [k]: response.aggregations[k].buckets.map(({ key }) => key)
+    }),
+    {}
+  );
+};
+
+const getStatsGenerator = async ({ name, hits, idMap }) => {
+  if (name === "genomes") {
+    const stats = await Promise.all(
+      ["projects", "samples", "alignments"].map(async x => ({
+        name: x,
+        stats:
+          idMap[x].length > 1
+            ? {}
+            : (await Statistics.find({
+                ownerType: x.slice(0, -1),
+                ownerId: idMap[x][0],
+                gi: { $in: hits.map(x => x.gi) }
+              })).reduce((obj, y) => ({ ...obj, [y.gi]: y }), {})
+      }))
+    );
+    return stats.some(y => !_.isEmpty(y.stats))
+      ? hit =>
+          stats
+            .map(y => ({ name: y.name, value: y.stats[hit.gi] }))
+            .filter(y => !_.isEmpty(y.value))
+      : null;
+  } else {
+    const stats =
+      idMap["genomes"].length === 1
+        ? (await Statistics.find({
+            ownerType: name.slice(0, -1),
+            ownerId: { $in: hits.map(x => x.id) },
+            gi: idMap["genomes"][0]
+          })).reduce((obj, y) => ({ ...obj, [y.ownerId]: y }), {})
+        : {};
+    return !_.isEmpty(stats)
+      ? hit =>
+          stats[hit.id] ? [{ name: "genomes", value: stats[hit.id] }] : []
+      : null;
+  }
+};
+
+const entities = [
+  {
+    name: "samples",
+    typeName: "SampleSearch",
+    mappedReadField: "sampleId",
+    index: sampleIndex,
+    scope: { projectId: "projectId" }
+  },
+  {
+    name: "genomes",
+    typeName: "GenomeSearch",
+    field: "gi",
+    mappedReadField: "genome",
+    index: genomeIndex
+  },
+  {
+    name: "projects",
+    typeName: "ProjectSearch",
+    mappedReadField: "projectId",
+    index: projectIndex,
+    scope: { projectId: "_id" }
+  },
+  {
+    name: "alignments",
+    typeName: "AlignmentSearch",
+    mappedReadField: "alignmentId",
+    index: alignmentIndex,
+    scope: { projectId: "projectId" }
+  }
+];
+
+export default async ({
+  context: { user },
+  args,
+  info,
+  sqon = JSON.parse(args.query),
+  aggs = JSON.parse(args.aggs),
+  sqonMap = splitSqon(sqon)
+}) => {
+  const entitiesWithIds = await fetchEntityIds({
+    entities,
+    sqonMap,
+    userScope: !user.superUser && {
+      projectId: (await Access.find({ userId: user.id })).map(x => x.projectId)
+    }
+  });
+
+  const idMap = await fetchIdMapFromReads({ entitiesWithIds });
+
+  const results = await fetchResults({ entities, aggs, idMap, sqonMap, info });
+
+  const decoratedResults = await Promise.all(
+    results.map(async ({ name, hits, ...rest }) => {
+      const statsGenerator = await getStatsGenerator({ name, hits, idMap });
+      return {
+        ...rest,
+        name,
+        hasStatistics: !!statsGenerator,
+        hits: hits.map(x => ({
+          ...x,
+          statistics: statsGenerator?.(x) || []
+        }))
+      };
+    })
+  );
+
+  return decoratedResults.reduce(
+    (obj, { name, ...x }) => ({ ...obj, [name]: x }),
+    {}
+  );
 };

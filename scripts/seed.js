@@ -11,8 +11,18 @@ import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { Genome } from "@capsid/mongo/schema/genomes";
 import { User } from "@capsid/mongo/schema/users";
 import { Access } from "@capsid/mongo/schema/access";
+import { Statistics } from "@capsid/mongo/schema/statistics";
 
-const models = [Project, Sample, Alignment, MappedRead, Genome, User, Access];
+const models = [
+  Project,
+  Sample,
+  Alignment,
+  MappedRead,
+  Genome,
+  User,
+  Access,
+  Statistics
+];
 
 const email = process.env.SUPER_USER;
 
@@ -25,7 +35,6 @@ const nMappedReads = +process.env.N_READS || 20000; // total
 const projectSeedConfig = {
   id: { chance: "guid" },
   description: { faker: "lorem.sentence" },
-  roles: { function: () => ["admin", "owner"] },
   label: { faker: "lorem.word" },
   version: { faker: 'random.number({"min": 1, "max": 10})' },
   wikiLink: { values: ["http://google.com"] },
@@ -35,7 +44,6 @@ const projectSeedConfig = {
 const sampleSeedConfig = {
   id: { chance: "guid" },
   source: { faker: "lorem.word" },
-  role: { values: ["admin", "owner"] },
   description: { faker: "lorem.sentence" },
   cancer: { values: ["typeA", "typeB", "typeC"] },
   version: { faker: 'random.number({"min": 3, "max": 7})' },
@@ -60,7 +68,7 @@ const genomeSeedConfig = {
   organism: { faker: "lorem.sentence" },
   taxonomy: [{ faker: "lorem.word", length: 6 }],
   strand: { values: [true, false] },
-  accession: { faker: "lorem.word" },
+  accession: { incrementalId: 1 },
   gi: { incrementalId: 1 },
   taxonId: { faker: 'random.number({"min": 10000, "max": 50000})' },
   version: { faker: 'random.number({"min": 0, "max": 5})' }
@@ -90,6 +98,21 @@ const mappedReadConfig = {
   sequencingType: { values: ["TYPE 1", "TYPE 2", "TYPE 3"] },
   alignLength: { faker: 'random.number({"min": 20, "max": 70})' },
   isRef: { values: [true, false] }
+};
+
+const statisticsConfig = {
+  id: { chance: "guid" },
+  geneHits: { faker: 'random.number({"min": 100, "max": 1000})' },
+  geneCoverageMax: { function: Math.random },
+  geneCoverageAvg: { function: Math.random },
+  genomeHits: { faker: 'random.number({"min": 100, "max": 1000})' },
+  genomeCoverage: { function: Math.random },
+  pathgenomeHits: { faker: 'random.number({"min": 100, "max": 1000})' },
+  pathgenomeCoverage: { function: Math.random },
+  pathgeneHits: { faker: 'random.number({"min": 100, "max": 1000})' },
+  pathgeneCoverageAvg: { function: Math.random },
+  pathgeneCoverageMax: { function: Math.random },
+  tags: { values: [["lowMaxCover", "pathlowMaxCover"]] }
 };
 
 const generateData = (config, n) =>
@@ -207,9 +230,14 @@ const main = async () => {
     mappedReadConfig,
     nMappedReads
   );
+  const statsMap = {};
   const mappedReads = mappedReadItems.map(x => {
     const alignment = pickRandomElement(alignments);
     const genome = pickRandomElement(genomes);
+    statsMap[alignment.sampleId] = {
+      ...(statsMap[alignment.sampleId] || {}),
+      [genome.gi]: alignment
+    };
     return new MappedRead({
       ...x,
       projectLabel: alignment.projectLabel,
@@ -222,7 +250,49 @@ const main = async () => {
     });
   });
   await saveAndIndexAllT(mappedReads);
-  log(`Indexed ${mappedReads.length} genomes`, saveAndIndexAllT);
+  log(`Indexed ${mappedReads.length} mappedReads`, saveAndIndexAllT);
+
+  const statistics = _.flatten(
+    await Promise.all(
+      _.flatten(
+        Object.keys(statsMap).map(sampleId =>
+          Object.keys(statsMap[sampleId]).map(gi => ({
+            sampleId,
+            gi,
+            alignment: statsMap[sampleId][gi]
+          }))
+        )
+      ).map(async ({ sampleId, gi, alignment }) => {
+        const { items } = await generateData(statisticsConfig, 3);
+        return [
+          {
+            ownerType: "project",
+            ownerId: alignment.projectId,
+            data: items[0]
+          },
+          { ownerType: "sample", ownerId: alignment.sampleId, data: items[1] },
+          { ownerType: "alignment", ownerId: alignment.id, data: items[2] }
+        ].map(
+          ({ ownerType, ownerId, data }) =>
+            new Statistics({
+              ...data,
+              ownerType,
+              ownerId,
+              projectId: alignment.projectId,
+              projectLabel: alignment.projectLabel,
+              project: alignment.projectLabel,
+              accession: gi,
+              gi,
+              genome: gi,
+              sampleId: alignment.sampleId,
+              sample: alignment.sample
+            })
+        );
+      })
+    )
+  );
+  await saveAndIndexAllT(statistics);
+  log(`Indexed ${statistics.length} statistics`, saveAndIndexAllT);
 
   const superUser = new User({ email, superUser: true });
   await superUser.save();

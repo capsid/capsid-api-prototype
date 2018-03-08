@@ -26,12 +26,6 @@ const SampleSchema = new mongoose.Schema(
       es_indexed: true,
       es_type: "keyword"
     },
-    role: {
-      type: String,
-      description: "role",
-      es_indexed: true,
-      es_type: "keyword"
-    },
     description: {
       type: String,
       description: "description",

@@ -14,12 +14,6 @@ const ProjectSchema = new mongoose.Schema(
       es_indexed: true,
       es_type: "text"
     },
-    roles: {
-      type: Array,
-      description: "roles",
-      es_indexed: true,
-      es_type: "keyword"
-    },
     label: {
       type: String,
       description: "label",
