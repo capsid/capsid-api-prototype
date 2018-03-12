@@ -124,12 +124,14 @@ const deleteAll = async () => {
   await createIndices();
   await Promise.all(models.map(x => x.deleteMany()));
 };
+const deleteAllT = timely.promise(deleteAll);
 
 const saveAndIndexAll = async models => {
   const Model = models[0].constructor;
   await Model.insertMany(models);
   return Model.esSynchronize();
 };
+const saveAndIndexAllT = timely.promise(saveAndIndexAll);
 
 const log = (msg, timeFn) => console.log(`${timeFn.time}ms :: ${msg}`);
 
@@ -159,21 +161,7 @@ const generateEntitiesHasMany = async (set, seedConfig, n, mapper) => {
   });
 };
 
-const main = async () => {
-  if (!email) {
-    return console.error(
-      `A super user is required... 'SUPER_USER=<email> ... yarn index:seed'`
-    );
-  }
-
-  mongoose.connect(process.env.MONGO_HOST);
-
-  const deleteAllT = timely.promise(deleteAll);
-  const saveAndIndexAllT = timely.promise(saveAndIndexAll);
-
-  await deleteAllT();
-  log(`Deleted all data`, deleteAllT);
-
+const saveProjectsSamplesAndAlignments = async () => {
   const { items: projectItems } = await generateData(
     projectSeedConfig,
     nProjects
@@ -212,85 +200,121 @@ const main = async () => {
   await saveAndIndexAllT(alignments);
   log(`Indexed ${alignments.length} alignments`, saveAndIndexAllT);
 
-  const genomes = await generateEntitiesHasMany(
-    samples,
-    genomeSeedConfig,
-    nGenomes,
-    (item, samples) =>
-      new Genome({
-        ...item,
-        sampleCount: samples.length,
-        samples: samples.map(x => x._id)
-      })
+  return alignments;
+};
+
+const saveGenomes = async () => {
+  const genomes = (await generateData(genomeSeedConfig, nGenomes)).items.map(
+    x => new Genome(x)
   );
   await saveAndIndexAllT(genomes);
   log(`Indexed ${genomes.length} genomes`, saveAndIndexAllT);
+  return [genomes[0].gi, genomes[genomes.length - 1].gi];
+};
 
-  const { items: mappedReadItems } = await generateData(
-    mappedReadConfig,
-    nMappedReads
-  );
-  const statsMap = {};
-  const mappedReads = mappedReadItems.map(x => {
-    const alignment = pickRandomElement(alignments);
-    const genome = pickRandomElement(genomes);
-    statsMap[alignment.sampleId] = {
-      ...(statsMap[alignment.sampleId] || {}),
-      [genome.gi]: alignment
-    };
-    return new MappedRead({
-      ...x,
-      projectLabel: alignment.projectLabel,
+const maybeAddStats = ({ stats, alignment, accessor, gi, item, ownerType }) => {
+  const ownerId = alignment[accessor];
+  if (!stats[ownerId]) stats[ownerId] = {};
+  if (!stats[ownerId][gi])
+    stats[ownerId][gi] = new Statistics({
+      ...item(),
       projectId: alignment.projectId,
-      sample: alignment.sample,
+      projectLabel: alignment.projectLabel,
+      project: alignment.projectLabel,
+      accession: gi,
+      gi,
+      genome: gi,
       sampleId: alignment.sampleId,
-      alignment: alignment.name,
-      alignmentId: alignment._id,
-      genome: genome.gi
+      sample: alignment.sample,
+      ownerType,
+      ownerId
     });
-  });
-  await saveAndIndexAllT(mappedReads);
-  log(`Indexed ${mappedReads.length} mappedReads`, saveAndIndexAllT);
+};
 
-  const statistics = _.flatten(
-    await Promise.all(
+const saveMappedReads = async (alignments, minMaxGi) => {
+  const projectStats = {},
+    sampleStats = {},
+    alignmentStats = {};
+  const [minGi, maxGi] = minMaxGi;
+  const { items } = await generateData(statisticsConfig, 20);
+  const item = () => items[randomInRange(0, 20)];
+  let page = 0,
+    pageSize = 20000;
+  while (page * pageSize < nMappedReads) {
+    page++;
+    const { items: mappedReadItems } = await generateData(
+      mappedReadConfig,
+      pageSize
+    );
+    const mappedReads = mappedReadItems.map(x => {
+      const alignment = pickRandomElement(alignments);
+      const gi = randomInRange(minGi, maxGi);
+      maybeAddStats({
+        stats: projectStats,
+        alignment,
+        accessor: "projectId",
+        gi,
+        item,
+        ownerType: "project"
+      });
+      maybeAddStats({
+        stats: sampleStats,
+        alignment,
+        accessor: "sampleId",
+        gi,
+        item,
+        ownerType: "sample"
+      });
+      maybeAddStats({
+        stats: alignmentStats,
+        alignment,
+        accessor: "_id",
+        gi,
+        item,
+        ownerType: "alignment"
+      });
+      return new MappedRead({
+        ...x,
+        projectLabel: alignment.projectLabel,
+        projectId: alignment.projectId,
+        sample: alignment.sample,
+        sampleId: alignment.sampleId,
+        alignment: alignment.name,
+        alignmentId: alignment._id,
+        genome: gi
+      });
+    });
+    await saveAndIndexAllT(mappedReads);
+    log(`Indexed ${mappedReads.length} mappedReads`, saveAndIndexAllT);
+  }
+
+  return _.flatten(
+    [projectStats, sampleStats, alignmentStats].map((x, i) =>
       _.flatten(
-        Object.keys(statsMap).map(sampleId =>
-          Object.keys(statsMap[sampleId]).map(gi => ({
-            sampleId,
-            gi,
-            alignment: statsMap[sampleId][gi]
-          }))
+        Object.keys(x).map(objId =>
+          Object.keys(x[objId]).map(gi => x[objId][gi])
         )
-      ).map(async ({ sampleId, gi, alignment }) => {
-        const { items } = await generateData(statisticsConfig, 3);
-        return [
-          {
-            ownerType: "project",
-            ownerId: alignment.projectId,
-            data: items[0]
-          },
-          { ownerType: "sample", ownerId: alignment.sampleId, data: items[1] },
-          { ownerType: "alignment", ownerId: alignment.id, data: items[2] }
-        ].map(
-          ({ ownerType, ownerId, data }) =>
-            new Statistics({
-              ...data,
-              ownerType,
-              ownerId,
-              projectId: alignment.projectId,
-              projectLabel: alignment.projectLabel,
-              project: alignment.projectLabel,
-              accession: gi,
-              gi,
-              genome: gi,
-              sampleId: alignment.sampleId,
-              sample: alignment.sample
-            })
-        );
-      })
+      )
     )
   );
+};
+
+const main = async () => {
+  if (!email) {
+    return console.error(
+      `A super user is required... 'SUPER_USER=<email> ... yarn index:seed'`
+    );
+  }
+
+  mongoose.connect(process.env.MONGO_HOST);
+  await deleteAllT();
+  log(`Deleted all data`, deleteAllT);
+
+  const alignments = await saveProjectsSamplesAndAlignments();
+
+  const minMaxGi = await saveGenomes();
+
+  const statistics = await saveMappedReads(alignments, minMaxGi);
   await saveAndIndexAllT(statistics);
   log(`Indexed ${statistics.length} statistics`, saveAndIndexAllT);
 

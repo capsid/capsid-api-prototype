@@ -7,7 +7,7 @@
     "build": "babel src -d dist",
     "serve": "node dist/server.js",
     "index:create": "node --require 'dotenv/config' --require '@babel/register' ./scripts/create_indices.js",
-    "index:seed": "node --require 'dotenv/config' --require '@babel/register' ./scripts/seed.js",
+    "index:seed": "node --require 'dotenv/config' --require '@babel/register' --max_old_space_size=4096 ./scripts/seed.js",
     "index:delete": "sh ./scripts/delete_indices",
     "test": "jest"
   },
@@ -27,6 +27,7 @@
     "compression": "^1.7.1",
     "cors": "^2.8.4",
     "dotenv": "^5.0.0",
+    "elapsed-time": "0.0.1",
     "elasticsearch": "^14.1.0",
     "graphql": "^0.13.0-rc.1",
     "graphql-compose": "^3.0.4",
