@@ -1,10 +1,13 @@
-import _ from "lodash";
 import {
   parseResolveInfo,
   simplifyParsedResolveInfoFragmentWithType
 } from "graphql-parse-resolve-info";
 
 import client from "@capsid/es/client";
+import {
+  initStatsDecorator,
+  initCountDecorator
+} from "@capsid/graphql/resolvers/helpers/search";
 import { Access } from "@capsid/mongo/schema/access";
 import { Statistics } from "@capsid/mongo/schema/statistics";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
@@ -77,6 +80,33 @@ const fetchEntityIds = ({ entities, sqonMap, userScope }) =>
     )
   );
 
+const fetchIdMapFromReads = async ({ entitiesWithIds }) => {
+  const response = await MappedRead.esSearch({
+    size: 0,
+    query: {
+      bool: {
+        must: entitiesWithIds.map(({ name, results, mappedReadField }) => ({
+          terms: { [mappedReadField]: results }
+        }))
+      }
+    },
+    aggs: entitiesWithIds.reduce(
+      (obj, x) => ({
+        ...obj,
+        [x.name]: { terms: { field: x.mappedReadField, size: 999999 } }
+      }),
+      {}
+    )
+  });
+  return Object.keys(response.aggregations).reduce(
+    (obj, k) => ({
+      ...obj,
+      [k]: response.aggregations[k].buckets.map(({ key }) => key)
+    }),
+    {}
+  );
+};
+
 const fetchResults = ({
   entities,
   aggs,
@@ -143,69 +173,25 @@ const fetchResults = ({
       )
   );
 
-const fetchIdMapFromReads = async ({ entitiesWithIds }) => {
-  const response = await MappedRead.esSearch({
-    size: 0,
-    query: {
-      bool: {
-        must: entitiesWithIds.map(({ name, results, mappedReadField }) => ({
-          terms: { [mappedReadField]: results }
+const decorateResults = ({ results, idMap }) =>
+  Promise.all(
+    results.map(async ({ name, hits, ...rest }) => {
+      const [statsDecorator, countDecorator] = await Promise.all([
+        initStatsDecorator({ name, hits, idMap }),
+        initCountDecorator({ name, hits, idMap })
+      ]);
+      return {
+        ...rest,
+        name,
+        hasStatistics: !!statsDecorator,
+        hits: hits.map(x => ({
+          ...x,
+          statistics: statsDecorator?.(x) || [],
+          counts: countDecorator?.(x) || []
         }))
-      }
-    },
-    aggs: entitiesWithIds.reduce(
-      (obj, x) => ({
-        ...obj,
-        [x.name]: { terms: { field: x.mappedReadField, size: 999999 } }
-      }),
-      {}
-    )
-  });
-  return Object.keys(response.aggregations).reduce(
-    (obj, k) => ({
-      ...obj,
-      [k]: response.aggregations[k].buckets.map(({ key }) => key)
-    }),
-    {}
+      };
+    })
   );
-};
-
-const getStatsGenerator = async ({ name, hits, idMap }) => {
-  if (name === "genomes") {
-    const stats = await Promise.all(
-      ["projects", "samples", "alignments"].map(async x => ({
-        name: x,
-        stats:
-          idMap[x].length > 1
-            ? {}
-            : (await Statistics.find({
-                ownerType: x.slice(0, -1),
-                ownerId: idMap[x][0],
-                gi: { $in: hits.map(x => x.gi) }
-              })).reduce((obj, y) => ({ ...obj, [y.gi]: y }), {})
-      }))
-    );
-    return stats.some(y => !_.isEmpty(y.stats))
-      ? hit =>
-          stats
-            .map(y => ({ name: y.name, value: y.stats[hit.gi] }))
-            .filter(y => !_.isEmpty(y.value))
-      : null;
-  } else {
-    const stats =
-      idMap["genomes"].length === 1
-        ? (await Statistics.find({
-            ownerType: name.slice(0, -1),
-            ownerId: { $in: hits.map(x => x.id) },
-            gi: idMap["genomes"][0]
-          })).reduce((obj, y) => ({ ...obj, [y.ownerId]: y }), {})
-        : {};
-    return !_.isEmpty(stats)
-      ? hit =>
-          stats[hit.id] ? [{ name: "genomes", value: stats[hit.id] }] : []
-      : null;
-  }
-};
 
 const entities = [
   {
@@ -258,20 +244,7 @@ export default async ({
 
   const results = await fetchResults({ entities, aggs, idMap, sqonMap, info });
 
-  const decoratedResults = await Promise.all(
-    results.map(async ({ name, hits, ...rest }) => {
-      const statsGenerator = await getStatsGenerator({ name, hits, idMap });
-      return {
-        ...rest,
-        name,
-        hasStatistics: !!statsGenerator,
-        hits: hits.map(x => ({
-          ...x,
-          statistics: statsGenerator?.(x) || []
-        }))
-      };
-    })
-  );
+  const decoratedResults = await decorateResults({ results, idMap });
 
   return decoratedResults.reduce(
     (obj, { name, ...x }) => ({ ...obj, [name]: x }),

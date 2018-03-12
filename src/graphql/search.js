@@ -9,7 +9,8 @@ import { search } from "@capsid/graphql/resolvers";
 const fields = tc => {
   const newType = tc.clone(`${tc.getTypeName()}Search`);
   newType.addFields({
-    statistics: { type: "JSON" }
+    statistics: { type: "JSON" },
+    counts: { type: "JSON" }
   });
   return {
     aggs: { type: "JSON" },

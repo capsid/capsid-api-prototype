@@ -9,6 +9,9 @@ import alignments, {
 } from "@capsid/mongo/schema/alignments";
 import genomes, { index as genomeIndex } from "@capsid/mongo/schema/genomes";
 import mapped, { index as mappedIndex } from "@capsid/mongo/schema/mappedReads";
+import statistics, {
+  index as statisticsIndex
+} from "@capsid/mongo/schema/statistics";
 
 import { addMultiFieldsToMapping } from "@capsid/es/schema/utils";
 
@@ -17,7 +20,8 @@ const mappings = {
   [sampleIndex]: samples,
   [alignmentIndex]: alignments,
   [genomeIndex]: genomes,
-  [mappedIndex]: mapped
+  [mappedIndex]: mapped,
+  [statisticsIndex]: statistics
 };
 
 export default async () => {
