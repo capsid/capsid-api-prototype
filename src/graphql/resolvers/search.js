@@ -1,3 +1,4 @@
+import _ from "lodash";
 import {
   parseResolveInfo,
   simplifyParsedResolveInfoFragmentWithType
@@ -173,16 +174,18 @@ const fetchResults = ({
       )
   );
 
-const decorateResults = ({ results, idMap }) =>
+const decorateResults = ({ results, idMap, entities }) =>
   Promise.all(
-    results.map(async ({ name, hits, ...rest }) => {
+    results.map(async result => {
+      const { name, hits } = result;
+      if (!hits || _.isEmpty(hits)) return result;
+      const entity = entities.find(x => x.name === name);
       const [statsDecorator, countDecorator] = await Promise.all([
-        initStatsDecorator({ name, hits, idMap }),
-        initCountDecorator({ name, hits, idMap })
+        initStatsDecorator({ entity, hits, idMap }),
+        initCountDecorator({ entity, hits, idMap })
       ]);
       return {
-        ...rest,
-        name,
+        ...result,
         hasStatistics: !!statsDecorator,
         hits: hits.map(x => ({
           ...x,
@@ -244,7 +247,7 @@ export default async ({
 
   const results = await fetchResults({ entities, aggs, idMap, sqonMap, info });
 
-  const decoratedResults = await decorateResults({ results, idMap });
+  const decoratedResults = await decorateResults({ results, idMap, entities });
 
   return decoratedResults.reduce(
     (obj, { name, ...x }) => ({ ...obj, [name]: x }),

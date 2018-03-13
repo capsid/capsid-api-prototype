@@ -1,8 +1,7 @@
 import _ from "lodash";
 import { Statistics } from "@capsid/mongo/schema/statistics";
 
-const initStatsDecorator = async ({ name, hits, idMap }) => {
-  if (!hits || _.isEmpty(hits)) return null;
+const initStatsDecorator = async ({ entity: { name }, hits, idMap }) => {
   if (name === "genomes") {
     const stats = await Promise.all(
       ["projects", "samples", "alignments"].map(async x => ({
