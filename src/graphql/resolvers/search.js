@@ -187,11 +187,17 @@ const decorateResults = ({ results, idMap, entities }) =>
       return {
         ...result,
         hasStatistics: !!statsDecorator,
-        hits: hits.map(x => ({
-          ...x,
-          statistics: statsDecorator?.(x) || [],
-          counts: countDecorator?.(x) || []
-        }))
+        hits: hits.map(x => {
+          const statistics = statsDecorator?.(x) || [];
+          const counts = countDecorator?.(x) || [];
+          const cacheId = JSON.stringify({ id: x.id, statistics, counts });
+          return {
+            ...x,
+            cacheId,
+            statistics,
+            counts
+          };
+        })
       };
     })
   );

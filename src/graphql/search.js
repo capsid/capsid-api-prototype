@@ -10,7 +10,8 @@ const fields = tc => {
   const newType = tc.clone(`${tc.getTypeName()}Search`);
   newType.addFields({
     statistics: { type: "JSON" },
-    counts: { type: "JSON" }
+    counts: { type: "JSON" },
+    cacheId: { type: "String" }
   });
   return {
     aggs: { type: "JSON" },
