@@ -35,7 +35,7 @@ const nMappedReads = +process.env.N_READS || 20000; // total
 const projectSeedConfig = {
   id: { chance: "guid" },
   description: { faker: "lorem.sentence" },
-  label: { faker: "lorem.word" },
+  label: { faker: "lorem.sentence" },
   version: { faker: 'random.number({"min": 1, "max": 10})' },
   wikiLink: { values: ["http://google.com"] },
   name: { faker: "lorem.word" }
@@ -47,12 +47,12 @@ const sampleSeedConfig = {
   description: { faker: "lorem.sentence" },
   cancer: { values: ["typeA", "typeB", "typeC"] },
   version: { faker: 'random.number({"min": 3, "max": 7})' },
-  name: { faker: "lorem.word" }
+  name: { faker: "lorem.sentence" }
 };
 
 const alignmentSeedConfig = {
   id: { chance: "guid" },
-  name: { faker: "lorem.word" },
+  name: { faker: "lorem.sentence" },
   aligner: { faker: "lorem.word" },
   platform: { faker: "lorem.word" },
   type: { faker: "lorem.word" },
