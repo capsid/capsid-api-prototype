@@ -21,7 +21,8 @@ const login = async ({ args: { token, provider } }) => {
   if (!token) throw new Error(`Missing token`);
   if (!provider) throw new Error(`Missing provider`);
 
-  let egoJwt, egoUser;
+  let egoJwt;
+  let egoUser;
   try {
     egoJwt = await requestEgoJwt({ token, provider });
     egoUser = jwt.decode(egoJwt).context.user;

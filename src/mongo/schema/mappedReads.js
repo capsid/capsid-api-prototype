@@ -111,12 +111,6 @@ const MappedReadSchema = new mongoose.Schema(
       es_indexed: true,
       es_type: "long"
     },
-    genome: {
-      type: Number,
-      description: "genome id (gi)",
-      es_indexed: true,
-      es_type: "long"
-    },
     md: {
       type: String,
       description: "platform",

@@ -96,7 +96,6 @@ const mappedReadConfig = {
   refStrand: { values: [1] },
   alignLength: { faker: 'random.number({"min": 20, "max": 200})' },
   sequencingType: { values: ["TYPE 1", "TYPE 2", "TYPE 3"] },
-  alignLength: { faker: 'random.number({"min": 20, "max": 70})' },
   isRef: { values: [true, false] }
 };
 
@@ -149,17 +148,6 @@ const generateEntities = async (parents, seedConfig, n, mapper) => {
 const randomInRange = (min, max) => Math.floor(Math.random() * max) + min;
 
 const pickRandomElement = arr => arr[randomInRange(0, arr.length)];
-
-const pickRandomElements = (arr, n) =>
-  [...Array(n)].map(x => pickRandomElement(arr));
-
-const generateEntitiesHasMany = async (set, seedConfig, n, mapper) => {
-  const { items } = await generateData(seedConfig, n);
-  return items.map(item => {
-    const objs = pickRandomElements(set, randomInRange(1, 6));
-    return mapper(item, objs);
-  });
-};
 
 const saveProjectsSamplesAndAlignments = async () => {
   const { items: projectItems } = await generateData(
@@ -232,14 +220,14 @@ const maybeAddStats = ({ stats, alignment, accessor, gi, item, ownerType }) => {
 };
 
 const saveMappedReads = async (alignments, minMaxGi) => {
-  const projectStats = {},
-    sampleStats = {},
-    alignmentStats = {};
+  const projectStats = {};
+  const sampleStats = {};
+  const alignmentStats = {};
   const [minGi, maxGi] = minMaxGi;
   const { items } = await generateData(statisticsConfig, 20);
   const item = () => items[randomInRange(0, 20)];
-  let page = 0,
-    pageSize = 20000;
+  let page = 0;
+  let pageSize = 20000;
   while (page * pageSize < nMappedReads) {
     page++;
     const { items: mappedReadItems } = await generateData(

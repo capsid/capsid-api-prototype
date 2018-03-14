@@ -1,8 +1,3 @@
-import _ from "lodash";
-
-import { Sample } from "@capsid/mongo/schema/samples";
-import { Alignment } from "@capsid/mongo/schema/alignments";
-import { Statistics } from "@capsid/mongo/schema/statistics";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 
 const countMappedSearch = ({ field, ids, size }) =>

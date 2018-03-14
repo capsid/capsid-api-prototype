@@ -1,7 +1,7 @@
 import AggProcessor from "@arranger/middleware/dist/aggregations";
 
 export default ({ sqon, aggs }) => {
-  const graphql_fields = aggs.reduce(
+  const graphqlFields = aggs.reduce(
     (obj, x) => ({
       ...obj,
       [x.field]: {
@@ -13,8 +13,8 @@ export default ({ sqon, aggs }) => {
   const built = new AggProcessor().buildAggregations({
     type: { name: "" },
     nested_fields: [],
-    fields: Object.keys(graphql_fields),
-    graphql_fields,
+    fields: Object.keys(graphqlFields),
+    graphql_fields: graphqlFields,
     args: {
       filters: sqon,
       aggregations_filter_themselves: false

@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import composeWithMongoose from "graphql-compose-mongoose";
 
 import { addFromMongoRelation } from "@capsid/graphql/utils";

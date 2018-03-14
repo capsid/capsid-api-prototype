@@ -1,8 +1,5 @@
 import _ from "lodash";
-import {
-  parseResolveInfo,
-  simplifyParsedResolveInfoFragmentWithType
-} from "graphql-parse-resolve-info";
+import { parseResolveInfo } from "graphql-parse-resolve-info";
 
 import client from "@capsid/es/client";
 import {
@@ -10,7 +7,6 @@ import {
   initCountDecorator
 } from "@capsid/graphql/resolvers/helpers/search";
 import { Access } from "@capsid/mongo/schema/access";
-import { Statistics } from "@capsid/mongo/schema/statistics";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 import { splitSqon, aggsToEs, sqonToEs } from "@capsid/graphql/resolvers/utils";
 import { index as projectIndex } from "@capsid/mongo/schema/projects";

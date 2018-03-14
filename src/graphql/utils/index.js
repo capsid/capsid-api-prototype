@@ -1,2 +1,1 @@
-
-export { default as addFromMongoRelation } from './addFromMongoRelation'
+export { default as addFromMongoRelation } from "./addFromMongoRelation";

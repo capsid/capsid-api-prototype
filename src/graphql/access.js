@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import composeWithMongoose from "graphql-compose-mongoose";
 
 import { Access } from "@capsid/mongo/schema/access";

@@ -25,7 +25,7 @@ GQC.rootQuery().addFields({
   ...withUser({
     search: SearchTC.getResolver("search"),
 
-    // TODO: only keep the ones we need 
+    // TODO: only keep the ones we need
     projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
     projectEs: ProjectEsTC.getResolver("search"),
     projectMongoConnection: ProjectTC.getResolver("connection"),
