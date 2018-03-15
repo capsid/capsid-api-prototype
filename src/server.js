@@ -60,6 +60,7 @@ const main = async () => {
         const user = await User.findOne({ email });
         return { user };
       } catch (e) {
+        console.error(e);
         return {};
       }
     }
