@@ -1,19 +1,10 @@
 import { GQC } from "graphql-compose";
 
-import ProjectEsTC from "@capsid/es/schema/projects";
 import { ProjectTC } from "@capsid/graphql/projects";
-
-import SampleEsTC from "@capsid/es/schema/samples";
 import { SampleTC } from "@capsid/graphql/samples";
-
-import AlignmentEsTC from "@capsid/es/schema/alignments";
 import { AlignmentTC } from "@capsid/graphql/alignments";
-
-import GenomeEsTC from "@capsid/es/schema/genomes";
 import { GenomeTC } from "@capsid/graphql/genomes";
-
 import { AccessTC } from "@capsid/graphql/access";
-
 import { LoginTC } from "@capsid/graphql/login";
 import { SearchTC } from "@capsid/graphql/search";
 
