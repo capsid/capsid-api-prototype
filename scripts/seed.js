@@ -3,7 +3,7 @@ import mocker from "mocker-data-generator";
 import mongoose from "mongoose";
 import timely from "timely";
 
-import { createIndices } from "./utils";
+import { createIndices, createSuperUser } from "./utils";
 import { Project } from "@capsid/mongo/schema/projects";
 import { Sample } from "@capsid/mongo/schema/samples";
 import { Alignment } from "@capsid/mongo/schema/alignments";
@@ -306,10 +306,7 @@ const main = async () => {
   await saveAndIndexAllT(statistics);
   log(`Indexed ${statistics.length} statistics`, saveAndIndexAllT);
 
-  const superUser = new User({ email, superUser: true });
-  await superUser.save();
-
-  console.log(`Created super user with email "${superUser.email}"`);
+  await createSuperUser({ email });
 
   console.log("Database seeded");
 

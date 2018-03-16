@@ -24,11 +24,13 @@ const mappings = {
   [statisticsIndex]: statistics
 };
 
-export default async () => {
+export default async (fresh = true) => {
   await Promise.all(
     Object.keys(mappings).map(async index => {
-      if (await client.indices.exists({ index }))
+      if (await client.indices.exists({ index })) {
+        if (!fresh) return;
         await client.indices.delete({ index });
+      }
       await client.indices.create({
         index,
         body: {

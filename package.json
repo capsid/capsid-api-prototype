@@ -8,6 +8,8 @@
     "serve": "node dist/server.js",
     "index:create": "node --require 'dotenv/config' --require '@babel/register' ./scripts/create_indices.js",
     "index:seed": "node --require 'dotenv/config' --require '@babel/register' --max_old_space_size=4096 ./scripts/seed.js",
+    "index:sync": "node --require 'dotenv/config' --require '@babel/register' ./scripts/sync.js",
+    "index:superUser": "node --require 'dotenv/config' --require '@babel/register' ./scripts/superUser.js",
     "index:delete": "sh ./scripts/delete_indices",
     "test": "jest"
   },
