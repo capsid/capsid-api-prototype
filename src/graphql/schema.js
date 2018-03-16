@@ -25,30 +25,9 @@ GQC.rootQuery().addFields({
   ...withUser({
     search: SearchTC.getResolver("search"),
 
-    // TODO: only keep the ones we need
-    projectEsConnection: ProjectEsTC.getResolver("searchConnection"),
-    projectEs: ProjectEsTC.getResolver("search"),
-    projectMongoConnection: ProjectTC.getResolver("connection"),
-    projectMany: ProjectTC.getResolver("findMany"),
-    projectOne: ProjectTC.getResolver("findOne"),
     projectById: ProjectTC.getResolver("findById"),
-
-    sampleEsConnection: SampleEsTC.getResolver("searchConnection"),
-    sampleMongoConnection: SampleTC.getResolver("connection"),
-    sampleMany: SampleTC.getResolver("findMany"),
-    sampleOne: SampleTC.getResolver("findOne"),
     sampleById: SampleTC.getResolver("findById"),
-
-    alignmentEsConnection: AlignmentEsTC.getResolver("searchConnection"),
-    alignmentMongoConnection: AlignmentTC.getResolver("connection"),
-    alignmentMany: AlignmentTC.getResolver("findMany"),
-    alignmentOne: AlignmentTC.getResolver("findOne"),
     alignmentById: AlignmentTC.getResolver("findById"),
-
-    genomeEsConnection: GenomeEsTC.getResolver("searchConnection"),
-    genomeMongoConnection: GenomeTC.getResolver("connection"),
-    genomeMany: GenomeTC.getResolver("findMany"),
-    genomeOne: GenomeTC.getResolver("findOne"),
     genomeById: GenomeTC.getResolver("findById"),
 
     accessMany: AccessTC.getResolver("findMany")
