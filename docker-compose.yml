@@ -51,7 +51,9 @@ services:
 
 volumes:
   es:
+    driver: local
   mongo:
-  
+    driver: local
+
 networks:
   db:
