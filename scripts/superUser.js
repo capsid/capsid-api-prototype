@@ -1,14 +1,13 @@
-import mongoose from "mongoose";
-
 import { createSuperUser } from "./utils";
+import { connect, close } from "@capsid/mongo/utils";
 
 const main = async () => {
-  mongoose.connect(process.env.MONGO_HOST);
+  await connect();
 
   const email = process.env.SUPER_USER;
   await createSuperUser({ email });
 
-  mongoose.connection.close();
+  close();
 };
 
 main();

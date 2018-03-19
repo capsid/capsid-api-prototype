@@ -2,13 +2,13 @@ import { Engine } from "apollo-engine";
 import compression from "compression";
 import cors from "cors";
 import { GraphQLServer } from "graphql-yoga";
-import mongoose from "mongoose";
 import urlJoin from "url-join";
 import fetch from "node-fetch";
 import jwt from "jsonwebtoken";
 
 import schema from "@capsid/graphql/schema";
 import { User } from "@capsid/mongo/schema/users";
+import { connect } from "@capsid/mongo/utils";
 
 const endpoint = "/graphql";
 
@@ -40,7 +40,7 @@ const engineOpts = {
 };
 
 const main = async () => {
-  mongoose.connect(process.env.MONGO_HOST);
+  await connect();
 
   const engine = new Engine(engineOpts);
   engine.start();

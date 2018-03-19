@@ -1,9 +1,10 @@
 import _ from "lodash";
 import mocker from "mocker-data-generator";
-import mongoose from "mongoose";
 import timely from "timely";
 
 import { createIndices, createSuperUser } from "./utils";
+import { connect, close } from "@capsid/mongo/utils";
+
 import { Project } from "@capsid/mongo/schema/projects";
 import { Sample } from "@capsid/mongo/schema/samples";
 import { Alignment } from "@capsid/mongo/schema/alignments";
@@ -67,7 +68,7 @@ const genomeSeedConfig = {
   length: { faker: 'random.number({"min": 1000, "max": 5000})' },
   organism: { faker: "lorem.sentence" },
   taxonomy: [{ faker: "lorem.word", length: 6 }],
-  strand: { values: [true, false] },
+  strand: { values: [0, 1] },
   accession: { incrementalId: 1 },
   gi: { incrementalId: 1 },
   taxonId: { faker: 'random.number({"min": 10000, "max": 50000})' },
@@ -294,7 +295,8 @@ const main = async () => {
     );
   }
 
-  mongoose.connect(process.env.MONGO_HOST);
+  await connect();
+
   await deleteAllT();
   log(`Deleted all data`, deleteAllT);
 
@@ -310,7 +312,7 @@ const main = async () => {
 
   console.log("Database seeded");
 
-  mongoose.connection.close();
+  close();
 };
 
 main();

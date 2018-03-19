@@ -1,6 +1,5 @@
-import mongoose from "mongoose";
-
 import { createIndices } from "./utils";
+import { connect, close } from "@capsid/mongo/utils";
 
 import { Project } from "@capsid/mongo/schema/projects";
 import { Sample } from "@capsid/mongo/schema/samples";
@@ -12,13 +11,28 @@ import { Statistics } from "@capsid/mongo/schema/statistics";
 const models = [Project, Sample, Alignment, MappedRead, Genome, Statistics];
 
 const main = async () => {
-  mongoose.connect(process.env.MONGO_HOST);
+  await connect();
 
-  await createIndices(false);
-  models.map(Model => Model.on("es-bulk-error", err => console.error(err)));
-  await Promise.all(models.map(Model => Model.esSynchronize()));
+  await createIndices(+process.env.WIPE);
 
-  mongoose.connection.close();
+  await Promise.all(
+    models.map(async Model => {
+      const name = Model.collection.name;
+
+      console.log(`Indexing model ${name}`);
+
+      Model.on("es-bulk-error", err => {
+        console.error(`${name} error: `);
+        console.error(err);
+      });
+
+      await Model.esSynchronize();
+
+      console.log(`Model ${name} indexed`);
+    })
+  );
+
+  close();
 };
 
 main();

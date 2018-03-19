@@ -33,10 +33,10 @@ const GenomeSchema = new mongoose.Schema(
       es_type: "keyword"
     },
     strand: {
-      type: Boolean,
+      type: Number,
       description: "strand",
       es_indexed: true,
-      es_type: "boolean"
+      es_type: "long"
     },
     accession: {
       type: String,
