@@ -27,7 +27,10 @@ export default ({
   new Promise(
     (resolve, reject) =>
       scrollId
-        ? client.scroll({ scroll: "30m", scrollId }, handleResult)
+        ? client.scroll(
+            { scroll: "30m", scrollId },
+            handleResult({ entity, reject, resolve })
+          )
         : client.search(
             {
               index,
