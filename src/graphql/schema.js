@@ -7,6 +7,7 @@ import { GenomeTC } from "@capsid/graphql/genomes";
 import { AccessTC } from "@capsid/graphql/access";
 import { LoginTC } from "@capsid/graphql/login";
 import { SearchTC } from "@capsid/graphql/search";
+import { SearchAggCountTC } from "@capsid/graphql/searchAggCount";
 
 import { withUser, withProjectAdminAccess } from "@capsid/graphql/resolvers";
 
@@ -15,6 +16,7 @@ GQC.rootQuery().addFields({
 
   ...withUser({
     search: SearchTC.getResolver("search"),
+    searchAggCount: SearchAggCountTC.getResolver("searchAggCount"),
 
     projectById: ProjectTC.getResolver("findById"),
     sampleById: SampleTC.getResolver("findById"),
