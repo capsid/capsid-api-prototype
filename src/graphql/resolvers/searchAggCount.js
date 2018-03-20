@@ -3,15 +3,23 @@ import { searchEntities as entities } from "@capsid/graphql/resolvers/config";
 import {
   entityIdsFromSqon,
   entityIdMapFromReads,
-  resultsFromEntityIds,
-  statisticsAggs,
-  parseAggs
+  resultsFromEntityIds
 } from "@capsid/graphql/resolvers/helpers/search";
 
 const removeFieldFromSqon = ({ sqon, field, entity }) => ({
   ...sqon,
   content: sqon.content.filter(x => x.content.field !== `${entity}.${field}`)
 });
+
+const parseAggs = ({ field, type, aggs }) => {
+  const aggRoot = aggs[`${field}:global`]
+    ? aggs[`${field}:global`][`${field}:filtered`]
+    : aggs;
+
+  return type === "stats"
+    ? { stats: aggRoot[`${field}:stats`] }
+    : aggRoot[field];
+};
 
 export default async ({
   context: { user },
@@ -32,7 +40,25 @@ export default async ({
   const idMap = await entityIdMapFromReads({ entitiesWithIds });
 
   const results = await (agg.entity === "statistics"
-    ? statisticsAggs({ idMap, sqonByEntity, aggs })
+    ? resultsFromEntityIds({
+        name: "statistics",
+        query: {
+          bool: {
+            should: ["projects", "samples", "alignments"].map(x => ({
+              bool: {
+                must: [
+                  { term: { ownerType: x.slice(0, -1) } },
+                  { terms: { ownerId: idMap[x] } },
+                  { terms: { gi: idMap["genomes"] } }
+                ]
+              }
+            }))
+          }
+        },
+        sqon: sqonByEntity.statistics,
+        aggs: aggs.statistics,
+        index: "statistics"
+      })
     : resultsFromEntityIds({
         ...entities.find(x => x.name === agg.entity),
         ids: idMap[agg.entity],
