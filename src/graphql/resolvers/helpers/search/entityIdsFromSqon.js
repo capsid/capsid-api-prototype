@@ -2,69 +2,70 @@ import client from "@capsid/es/client";
 import { sqonToEs } from "@capsid/graphql/resolvers/utils";
 import { Access } from "@capsid/mongo/schema/access";
 
+const fetchAllIds = async ({ index, field, entity, query, aggs }) => {
+  const response = await client.search({
+    index,
+    type: "_doc",
+    size: 0,
+    body: {
+      query,
+      aggs: { unique: { terms: { field, size: 99999999 } } }
+    }
+  });
+  return {
+    ...entity,
+    results: response.aggregations.unique.buckets.map(({ key }) => key)
+  };
+};
+
 export default async ({ entities, sqonByEntity, user }) => {
   const userScope = !user.superUser && {
     projectId: (await Access.find({ userId: user.id })).map(x => x.projectId)
   };
-  return Promise.all(
-    entities.map(
-      ({ name, field, index, scope, ...rest }) =>
-        new Promise((resolve, reject) => {
-          const fetchMore = (results = []) => (err, response) => {
-            if (err) return reject(err);
-            const nextResults = [
-              ...results,
-              ...response.hits.hits
-                .map(x => x[field ? "_source" : "_id"])
-                .map(x => (field ? x[field] : x))
-            ];
-            if (nextResults.length === response.hits.total)
-              resolve({
-                ...rest,
-                name,
-                field,
-                index,
-                scope,
-                results: nextResults
-              });
-            else
-              client.scroll(
-                { scroll: "2s", scrollId: response._scroll_id },
-                fetchMore(nextResults, resolve)
-              );
-          };
-          const sqonQuery = sqonToEs(sqonByEntity[name]);
-          client.search(
-            {
-              index,
-              type: "_doc",
-              scroll: "2s",
-              size: 500,
-              sort: ["_id"],
-              ...(field
-                ? { _source: [field] }
-                : {
-                    stored_fields: "_none",
-                    docvalue_fields: ["_uid"]
-                  }),
-              body: {
-                query: {
-                  bool: {
-                    must: [
-                      ...(scope && userScope
-                        ? Object.keys(scope).map(k => ({
-                            terms: { [scope[k]]: userScope[k] }
-                          }))
-                        : []),
-                      ...(sqonQuery ? [{ ...sqonQuery }] : [])
-                    ]
-                  }
-                }
-              }
-            },
-            fetchMore()
-          );
-        })
+  const entitiesWithIds = await Promise.all(
+    entities.map(entity =>
+      fetchAllIds({
+        entity,
+        field: entity.field || "_id",
+        index: entity.index,
+        query: {
+          bool: {
+            must: [
+              ...(entity.scope && userScope
+                ? Object.keys(entity.scope).map(k => ({
+                    terms: { [entity.scope[k]]: userScope[k] }
+                  }))
+                : []),
+              ...(sqonByEntity[entity.name]
+                ? [{ ...sqonToEs(sqonByEntity[entity.name]) }]
+                : [])
+            ]
+          }
+        }
+      })
+    )
+  );
+  if (!sqonByEntity.statistics) return entitiesWithIds;
+  return await Promise.all(
+    entitiesWithIds.map(({ results, ...entity }) =>
+      fetchAllIds({
+        entity,
+        field: entity.field || "ownerId",
+        index: "statistics",
+        query: {
+          bool: {
+            must: [
+              ...(entity.field
+                ? [{ terms: { [entity.field]: results } }]
+                : [
+                    { term: { ownerType: entity.name.slice(0, -1) } },
+                    { terms: { ownerId: results } }
+                  ]),
+              ...[{ ...sqonToEs(sqonByEntity.statistics) }]
+            ]
+          }
+        }
+      })
     )
   );
 };

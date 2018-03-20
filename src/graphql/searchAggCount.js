@@ -3,7 +3,10 @@ import { TypeComposer } from "graphql-compose";
 import { searchAggCount } from "@capsid/graphql/resolvers";
 
 export const SearchAggCountTC = TypeComposer.create(`type SearchAggCount`);
-SearchAggCountTC.addFields({ buckets: { type: "JSON" } });
+SearchAggCountTC.addFields({
+  buckets: { type: "JSON" },
+  stats: { type: "JSON" }
+});
 SearchAggCountTC.addResolver({
   name: "searchAggCount",
   kind: "query",
