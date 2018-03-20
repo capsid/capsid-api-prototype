@@ -29,22 +29,18 @@ const fetchResults = ({
           ]
       }))
       .filter(({ gqlFields }) => !!gqlFields)
-      .map(
-        ({
-          gqlFields: { hits },
-          scrollId = hits?.args?.after,
-          sort = hits?.args?.sort,
-          size = hits?.args?.size,
-          ...x
-        }) => ({ ...x, scrollId, sort, size })
-      )
-      .map(({ name: entity, field, index, scrollId, sort, size }) =>
+      .map(({ gqlFields: { hits }, ...x }) => ({
+        ...x,
+        scrollId: hits?.args?.after,
+        sort: hits?.args?.sort,
+        size: hits?.args?.size
+      }))
+      .map(({ name, field, index, scrollId, sort, size }) =>
         resultsFromEntityIds({
-          entity,
+          name,
           field,
-          ids: idMap[entity],
-          sqon: sqonByEntity[entity],
-          aggs: aggs[entity],
+          ids: idMap[name],
+          sqon: sqonByEntity[name],
           index,
           scrollId,
           sort,
@@ -56,7 +52,7 @@ const fetchResults = ({
 const decorateResults = ({ results, idMap, entities }) =>
   Promise.all(
     results.map(async result => {
-      const { entity: name, hits } = result;
+      const { name, hits } = result;
       if (!hits || _.isEmpty(hits)) return result;
       const entity = entities.find(x => x.name === name);
       const [statsDecorator, countDecorator] = await Promise.all([
@@ -108,7 +104,7 @@ export default async ({
   const decoratedResults = await decorateResults({ results, idMap, entities });
 
   return decoratedResults.reduce(
-    (obj, { entity, ...x }) => ({ ...obj, [entity]: x }),
+    (obj, { name, ...x }) => ({ ...obj, [name]: x }),
     {}
   );
 };

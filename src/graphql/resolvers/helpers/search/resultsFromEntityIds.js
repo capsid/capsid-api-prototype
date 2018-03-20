@@ -1,11 +1,11 @@
 import client from "@capsid/es/client";
 import { aggsToEs } from "@capsid/graphql/resolvers/utils";
 
-const handleResult = ({ entity, reject, resolve }) => (err, response) => {
+const handleResult = ({ name, reject, resolve }) => (err, response) => {
   if (err) return reject(err);
   const hits = response.hits.hits.map(x => x._source);
   resolve({
-    entity,
+    name,
     hits,
     total: response.hits.total,
     aggs: response.aggregations,
@@ -14,7 +14,7 @@ const handleResult = ({ entity, reject, resolve }) => (err, response) => {
 };
 
 export default ({
-  entity,
+  name,
   field,
   ids,
   sqon,
@@ -22,29 +22,28 @@ export default ({
   index,
   size,
   sort,
-  scrollId
+  scrollId,
+  query
 }) =>
   new Promise(
     (resolve, reject) =>
       scrollId
         ? client.scroll(
             { scroll: "30m", scrollId },
-            handleResult({ entity, reject, resolve })
+            handleResult({ name, reject, resolve })
           )
         : client.search(
             {
               index,
               type: "_doc",
               sort: sort?.map(x => x.split("__").join(":")) || ["_id"],
-              ...(size ? { scroll: "30m" } : null),
+              ...(size && { scroll: "30m" }),
               size: size || 0,
               body: {
-                query: {
-                  terms: { [field || "_id"]: ids }
-                },
+                query: { ...(query || { terms: { [field || "_id"]: ids } }) },
                 ...(aggs && { aggs: aggsToEs({ sqon, aggs }) })
               }
             },
-            handleResult({ entity, reject, resolve })
+            handleResult({ name, reject, resolve })
           )
   );

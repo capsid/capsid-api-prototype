@@ -3,7 +3,9 @@ import { searchEntities as entities } from "@capsid/graphql/resolvers/config";
 import {
   entityIdsFromSqon,
   entityIdMapFromReads,
-  resultsFromEntityIds
+  resultsFromEntityIds,
+  statisticsAggs,
+  parseAggs
 } from "@capsid/graphql/resolvers/helpers/search";
 
 const removeFieldFromSqon = ({ sqon, field, entity }) => ({
@@ -29,12 +31,14 @@ export default async ({
 
   const idMap = await entityIdMapFromReads({ entitiesWithIds });
 
-  const results = await resultsFromEntityIds({
-    ...entities.find(x => x.name === agg.entity),
-    ids: idMap[agg.entity],
-    sqon: filteredSqon,
-    aggs: aggs[agg.entity]
-  });
+  const results = await (agg.entity === "statistics"
+    ? statisticsAggs({ idMap, sqonByEntity, aggs })
+    : resultsFromEntityIds({
+        ...entities.find(x => x.name === agg.entity),
+        ids: idMap[agg.entity],
+        sqon: filteredSqon,
+        aggs: aggs[agg.entity]
+      }));
 
-  return results.aggs[agg.field];
+  return parseAggs({ field: agg.field, type: agg.type, aggs: results.aggs });
 };
