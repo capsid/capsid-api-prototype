@@ -11,16 +11,6 @@ const removeFieldFromSqon = ({ sqon, field, entity }) => ({
   content: sqon.content.filter(x => x.content.field !== `${entity}.${field}`)
 });
 
-const parseAggs = ({ field, type, aggs }) => {
-  const aggRoot = aggs[`${field}:global`]
-    ? aggs[`${field}:global`][`${field}:filtered`]
-    : aggs;
-
-  return type === "stats"
-    ? { stats: aggRoot[`${field}:stats`] }
-    : aggRoot[field];
-};
-
 export default async ({
   context: { user },
   args,
@@ -39,32 +29,12 @@ export default async ({
 
   const idMap = await entityIdMapFromReads({ entitiesWithIds });
 
-  const results = await (agg.entity === "statistics"
-    ? resultsFromEntityIds({
-        name: "statistics",
-        query: {
-          bool: {
-            should: ["projects", "samples", "alignments"].map(x => ({
-              bool: {
-                must: [
-                  { term: { ownerType: x.slice(0, -1) } },
-                  { terms: { ownerId: idMap[x] } },
-                  { terms: { gi: idMap["genomes"] } }
-                ]
-              }
-            }))
-          }
-        },
-        sqon: sqonByEntity.statistics,
-        aggs: aggs.statistics,
-        index: "statistics"
-      })
-    : resultsFromEntityIds({
-        ...entities.find(x => x.name === agg.entity),
-        ids: idMap[agg.entity],
-        sqon: filteredSqon,
-        aggs: aggs[agg.entity]
-      }));
+  const results = await resultsFromEntityIds({
+    ...entities.find(x => x.name === agg.entity),
+    ids: idMap[agg.entity],
+    sqon: filteredSqon,
+    aggs: aggs[agg.entity]
+  });
 
-  return parseAggs({ field: agg.field, type: agg.type, aggs: results.aggs });
+  return { aggs: results.aggs };
 };

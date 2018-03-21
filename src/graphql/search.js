@@ -37,12 +37,16 @@ ProjectSearchTC.addFields(fields(ProjectEsTC));
 const AlignmentSearchTC = TypeComposer.create(`type AlignmentSearch`);
 AlignmentSearchTC.addFields(fields(AlignmentEsTC));
 
+const StatisticsSearchTC = TypeComposer.create(`type StatisticsSearch`);
+StatisticsSearchTC.addFields({ aggs: { type: "JSON" } });
+
 export const SearchTC = TypeComposer.create(`type Search`);
 SearchTC.addFields({
   samples: SampleSearchTC,
   genomes: GenomeSearchTC,
   projects: ProjectSearchTC,
-  alignments: AlignmentSearchTC
+  alignments: AlignmentSearchTC,
+  statistics: StatisticsSearchTC
 });
 
 SearchTC.addResolver({

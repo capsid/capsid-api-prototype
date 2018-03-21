@@ -19,8 +19,8 @@ const fetchResults = ({
   sqonByEntity,
   fieldInfo = parseResolveInfo(info)
 }) =>
-  Promise.all(
-    entities
+  Promise.all([
+    ...entities
       .map(x => ({
         ...x,
         gqlFields:
@@ -41,26 +41,52 @@ const fetchResults = ({
           field,
           ids: idMap[name],
           sqon: sqonByEntity[name],
+          aggs: aggs[name],
           index,
           scrollId,
           sort,
           size
         })
-      )
-  );
+      ),
+    ...(aggs.statistics
+      ? [
+          resultsFromEntityIds({
+            name: "statistics",
+            query: {
+              bool: {
+                should: ["projects", "samples", "alignments"].map(x => ({
+                  bool: {
+                    must: [
+                      { term: { ownerType: x.slice(0, -1) } },
+                      { terms: { ownerId: idMap[x] } },
+                      { terms: { gi: idMap["genomes"] } }
+                    ]
+                  }
+                }))
+              }
+            },
+            sqon: sqonByEntity.statistics,
+            aggs: aggs.statistics,
+            index: "statistics"
+          })
+        ]
+      : [])
+  ]);
 
 const decorateResults = ({ results, idMap, entities }) =>
   Promise.all(
-    results.map(async result => {
-      const { name, hits } = result;
-      if (!hits || _.isEmpty(hits)) return result;
+    results.map(async ({ name, hits, ...result }) => {
       const entity = entities.find(x => x.name === name);
-      const [statsDecorator, countDecorator] = await Promise.all([
-        initStatsDecorator({ entity, hits, idMap }),
-        initCountDecorator({ entity, hits, idMap })
-      ]);
+      const [statsDecorator, countDecorator] =
+        hits && !_.isEmpty(hits)
+          ? await Promise.all([
+              initStatsDecorator({ entity, hits, idMap }),
+              initCountDecorator({ entity, hits, idMap })
+            ])
+          : [null, null];
       return {
         ...result,
+        name,
         hasStatistics: !!statsDecorator,
         hits: hits.map(x => {
           const statistics = statsDecorator?.(x) || [];
