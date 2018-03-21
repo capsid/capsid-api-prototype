@@ -1,4 +1,4 @@
-import AggProcessor from "@arranger/middleware/dist/aggregations";
+import { buildQuery, buildAggregations } from "@arranger/middleware";
 
 export default ({ sqon, aggs }) => {
   const graphqlFields = aggs.reduce(
@@ -10,15 +10,10 @@ export default ({ sqon, aggs }) => {
     }),
     {}
   );
-  const built = new AggProcessor().buildAggregations({
-    type: { name: "" },
-    nested_fields: [],
-    fields: Object.keys(graphqlFields),
-    graphql_fields: graphqlFields,
-    args: {
-      filters: sqon,
-      aggregations_filter_themselves: false
-    }
+  return buildAggregations({
+    nestedFields: [],
+    graphqlFields,
+    query: buildQuery({ nestedFields: [], filters: sqon }),
+    aggregationsFilterThemselves: true
   });
-  return built.aggs;
 };

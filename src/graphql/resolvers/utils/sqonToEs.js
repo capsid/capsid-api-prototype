@@ -1,4 +1,4 @@
-import FilterProcessor from "@arranger/middleware/dist/filters";
+import { buildQuery } from "@arranger/middleware";
 
 export default sqon =>
-  sqon ? new FilterProcessor().buildFilters("", [], sqon) : null;
+  sqon ? buildQuery({ nestedFields: [], filters: sqon }) : null;
