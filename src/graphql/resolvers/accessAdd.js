@@ -13,19 +13,17 @@ const accessAdd = async ({ args, context }) => {
   const { projectId, userEmail: email, access: accessKey } = args;
   const access = accessMap[accessKey];
 
-  if (!access) throw new Error(`Invalid role`);
+  if (!access) throw new Error(`access:Select a role`);
   if (!email || !validator.isEmail(email))
-    throw new Error(`Invalid email address`);
+    throw new Error(`userEmail:Invalid email address`);
 
   let user = await User.findOne({ email });
   if (!user) user = await User.create({ email, superUser: false });
 
   let existingAccess = await Access.findOne({ userId: user._id, projectId });
   if (existingAccess) {
-    throw new Error(`User "${user.email}" already has access`);
+    throw new Error(`userEmail:User "${user.email}" already has access`);
   }
-
-  // TODO: validation
 
   const project = await Project.findById(projectId);
   return await Access.create({
