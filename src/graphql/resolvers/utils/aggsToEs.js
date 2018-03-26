@@ -14,6 +14,6 @@ export default ({ sqon, aggs }) => {
     nestedFields: [],
     graphqlFields,
     query: buildQuery({ nestedFields: [], filters: sqon }),
-    aggregationsFilterThemselves: true
+    aggregationsFilterThemselves: false
   });
 };
