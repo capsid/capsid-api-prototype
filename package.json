@@ -46,6 +46,7 @@
     "timely": "^0.2.0",
     "url-join": "^4.0.0",
     "validator": "^9.4.1",
+    "winston": "^3.0.0-rc3",
     "with-query": "^1.0.2"
   },
   "devDependencies": {

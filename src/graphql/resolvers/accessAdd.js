@@ -3,6 +3,7 @@ import validator from "validator";
 import { Access } from "@capsid/mongo/schema/access";
 import { Project } from "@capsid/mongo/schema/projects";
 import { User } from "@capsid/mongo/schema/users";
+import logger from "@capsid/services/logger";
 
 const arrayToStackMap = arr =>
   arr.reduce((obj, x, i) => ({ ...obj, [x]: arr.slice(0, i + 1) }), {});
@@ -26,13 +27,17 @@ const accessAdd = async ({ args, context }) => {
   }
 
   const project = await Project.findById(projectId);
-  return await Access.create({
+  const result = await Access.create({
     projectId: project._id,
     projectLabel: project.label,
     userId: user._id,
     userEmail: user.email,
     access
   });
+  logger.info(
+    `Added '${access}' user '${user.email}' to project '${project._id}'`
+  );
+  return result;
 };
 
 export default accessAdd;

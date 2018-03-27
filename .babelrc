@@ -19,7 +19,8 @@
         "alias": {
           "@capsid/graphql": "./src/graphql",
           "@capsid/mongo": "./src/mongo",
-          "@capsid/es": "./src/es"
+          "@capsid/es": "./src/es",
+          "@capsid/services": "./src/services"
         }
       }
     ]

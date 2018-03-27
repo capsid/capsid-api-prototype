@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import schema from "@capsid/graphql/schema";
 import { User } from "@capsid/mongo/schema/users";
 import { connect } from "@capsid/mongo/utils";
+import logger from "@capsid/services/logger";
 
 const endpoint = "/graphql";
 
@@ -70,7 +71,7 @@ const main = async () => {
   server.express.use(compression());
   server.express.use(engine.expressMiddleware());
   server.start(serverOpts, ({ port }) =>
-    console.log(`Server is running on localhost: ${port}`)
+    logger.info(`Server is running on localhost: ${port}`)
   );
 };
 
