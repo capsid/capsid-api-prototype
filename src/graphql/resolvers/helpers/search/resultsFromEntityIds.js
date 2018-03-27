@@ -23,7 +23,8 @@ export default ({
   size,
   sort,
   scrollId,
-  query
+  query,
+  aggregationsFilterThemselves
 }) =>
   new Promise(
     (resolve, reject) =>
@@ -41,7 +42,9 @@ export default ({
               size: size || 0,
               body: {
                 query: { ...(query || { terms: { [field || "_id"]: ids } }) },
-                ...(aggs && { aggs: aggsToEs({ sqon, aggs }) })
+                ...(aggs && {
+                  aggs: aggsToEs({ sqon, aggs, aggregationsFilterThemselves })
+                })
               }
             },
             handleResult({ name, reject, resolve })

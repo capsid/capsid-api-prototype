@@ -33,7 +33,8 @@ export default async ({
     ...entities.find(x => x.name === agg.entity),
     ids: idMap[agg.entity],
     sqon: filteredSqon,
-    aggs: aggs[agg.entity]
+    aggs: aggs[agg.entity],
+    aggregationsFilterThemselves: true
   });
 
   return { aggs: results.aggs };

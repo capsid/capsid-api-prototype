@@ -1,6 +1,6 @@
 import { buildQuery, buildAggregations } from "@arranger/middleware";
 
-export default ({ sqon, aggs }) => {
+export default ({ sqon, aggs, aggregationsFilterThemselves = false }) => {
   const graphqlFields = aggs.reduce(
     (obj, x) => ({
       ...obj,
@@ -14,6 +14,6 @@ export default ({ sqon, aggs }) => {
     nestedFields: [],
     graphqlFields,
     query: buildQuery({ nestedFields: [], filters: sqon }),
-    aggregationsFilterThemselves: false
+    aggregationsFilterThemselves
   });
 };
