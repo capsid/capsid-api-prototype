@@ -1,6 +1,9 @@
+import { info } from "@capsid/services/logger";
+import elapsed from "@capsid/services/elapsedTime";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 
 export default async ({ entitiesWithIds }) => {
+  const t1 = elapsed();
   const response = await MappedRead.esSearch({
     size: 0,
     query: {
@@ -18,6 +21,7 @@ export default async ({ entitiesWithIds }) => {
       {}
     )
   });
+  info(`mapped read search`, t1.getValue());
   return Object.keys(response.aggregations).reduce(
     (obj, k) => ({
       ...obj,

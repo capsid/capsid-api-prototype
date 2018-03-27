@@ -11,4 +11,19 @@ const logger = createLogger({
   transports: [new transports.Console()]
 });
 
-export default logger;
+const log = (
+  level,
+  msg,
+  tag = null,
+  tags = tag && (Array.isArray(tag) ? tag : [tag]).filter(Boolean)
+) =>
+  logger.log(
+    level,
+    `${
+      tags && tags.length ? tags.reduce((str, x) => `${str}[${x}]`, ``) : ""
+    } ${msg}`
+  );
+
+export const info = (msg, tag) => log("info", msg, tag);
+export const warn = (msg, tag) => log("warn", msg, tag);
+export const error = (msg, tag) => log("error", msg, tag);

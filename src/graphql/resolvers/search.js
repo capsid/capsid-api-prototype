@@ -10,11 +10,10 @@ import {
 } from "@capsid/graphql/resolvers/helpers/search";
 import { splitSqon } from "@capsid/graphql/resolvers/utils";
 import { searchEntities as entities } from "@capsid/graphql/resolvers/config";
-import logger from "@capsid/services/logger";
+import { info } from "@capsid/services/logger";
 import elapsed from "@capsid/services/elapsedTime";
 
-const log = (msg, t = null) =>
-  logger.info(`[search]${t ? `[${t.getValue()}]` : ""} ${msg}`);
+const log = (msg, t = null) => info(msg, [`search`, t && t.getValue()]);
 
 const fetchResults = ({
   entities,
