@@ -10,6 +10,11 @@ import {
 } from "@capsid/graphql/resolvers/helpers/search";
 import { splitSqon } from "@capsid/graphql/resolvers/utils";
 import { searchEntities as entities } from "@capsid/graphql/resolvers/config";
+import logger from "@capsid/services/logger";
+import elapsed from "@capsid/services/elapsedTime";
+
+const log = (msg, t = null) =>
+  logger.info(`[search]${t ? `[${t.getValue()}]` : ""} ${msg}`);
 
 const fetchResults = ({
   entities,
@@ -111,14 +116,19 @@ export default async ({
   aggs = JSON.parse(args.aggs),
   sqonByEntity = splitSqon(sqon)
 }) => {
+  const t1 = elapsed();
   const entitiesWithIds = await entityIdsFromSqon({
     entities,
     sqonByEntity,
     user
   });
+  log(`fetched individual entity ids`, t1);
 
+  const t2 = elapsed();
   const idMap = await entityIdMapFromReads({ entitiesWithIds });
+  log(`fetched id map from reads`, t2);
 
+  const t3 = elapsed();
   const results = await fetchResults({
     entities,
     aggs,
@@ -126,8 +136,11 @@ export default async ({
     sqonByEntity,
     info
   });
+  log(`fetched final results`, t3);
 
+  const t4 = elapsed();
   const decoratedResults = await decorateResults({ results, idMap, entities });
+  log(`decorated results`, t4);
 
   return decoratedResults.reduce(
     (obj, { name, ...x }) => ({ ...obj, [name]: x }),
