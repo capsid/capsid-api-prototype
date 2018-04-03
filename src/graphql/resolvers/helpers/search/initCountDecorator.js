@@ -1,3 +1,5 @@
+import { info } from "@capsid/services/logger";
+import elapsed from "@capsid/services/elapsedTime";
 import { MappedRead } from "@capsid/mongo/schema/mappedReads";
 
 const countMappedSearch = ({ field, ids, size }) =>
@@ -27,6 +29,7 @@ const countMappedSearch = ({ field, ids, size }) =>
   });
 
 const initCountDecorator = async ({ entity, hits, idMap }) => {
+  const t = elapsed();
   const response = await countMappedSearch({
     size: hits.length,
     field: entity.mappedReadField,
@@ -35,6 +38,7 @@ const initCountDecorator = async ({ entity, hits, idMap }) => {
       [entity.name]: hits.map(x => x[entity.field] || x.id)
     }
   });
+  info(`init count decorator`, [`search`, t.getValue()]);
   return x => {
     const bucket = response.aggregations.count.buckets.find(
       b => `${b.key}` === `${x[entity.field] || x.id}`
