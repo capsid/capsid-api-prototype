@@ -109,7 +109,7 @@ const MappedReadSchema = new mongoose.Schema(
       type: Number,
       description: "genome id (gi)",
       es_indexed: true,
-      es_type: "long"
+      es_type: "keyword"
     },
     md: {
       type: String,

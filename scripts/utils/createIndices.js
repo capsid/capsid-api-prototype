@@ -13,7 +13,7 @@ import statistics, {
   index as statisticsIndex
 } from "@capsid/mongo/schema/statistics";
 
-import { addMultiFieldsToMapping } from "@capsid/es/schema/utils";
+import { decorateMapping } from "@capsid/es/schema/utils";
 
 const mappings = {
   [projectIndex]: projects,
@@ -36,7 +36,10 @@ export default async (fresh = true) => {
         body: {
           mappings: {
             _doc: {
-              properties: addMultiFieldsToMapping(generate(mappings[index]))
+              properties: decorateMapping({
+                index,
+                mapping: generate(mappings[index])
+              })
             }
           }
         }
